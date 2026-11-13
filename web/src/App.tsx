@@ -3,15 +3,11 @@ import { flushSync } from 'react-dom';
 import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { api, Compte, jeton } from './api';
 import { Accueil, Connexion, Inscription } from './pages/Auth';
-import { Citoyen, NouvelleDeclaration } from './pages/Citoyen';
 import { Icone, Page } from './ui';
-import { NouveauSignalement } from './pages/Decouvreur';
-import { Aide } from './pages/Aide';
-import { RetourPaiement } from './pages/RetourPaiement';
 import { Seo } from './seo';
 import { Cgu, Confidentialite, Introuvable, MentionsLegales } from './pages/Legal';
 
-// écrans chargés à la demande : le premier affichage ne télécharge pas le code de l'administrateur ni de l'agent
+// écrans chargés à la demande : le premier affichage ne télécharge pas le code des espaces connectés
 const Agent = lazy(() => import('./pages/Agent').then((m) => ({ default: m.Agent })));
 const admin = (n: string) => lazy(() => import('./pages/Admin').then((m) => ({ default: (m as any)[n] })));
 const Tableau = admin('Tableau'), AdminCorrespondances = admin('AdminCorrespondances'), AdminRecherche = admin('AdminRecherche'), AdminComptes = admin('AdminComptes'), AdminJournal = admin('AdminJournal'), AdminMessages = admin('AdminMessages');
@@ -19,6 +15,12 @@ const Notifications = lazy(() => import('./pages/Notifications').then((m) => ({ 
 const Profil = lazy(() => import('./pages/Profil').then((m) => ({ default: m.Profil })));
 const Discussions = lazy(() => import('./pages/Discussions').then((m) => ({ default: m.Discussions })));
 const Reglages = lazy(() => import('./pages/Reglages').then((m) => ({ default: m.Reglages })));
+// espace citoyen aussi : un visiteur de la page d'accueil ne télécharge que l'accueil, la connexion et l'inscription
+const Citoyen = lazy(() => import('./pages/Citoyen').then((m) => ({ default: m.Citoyen })));
+const NouvelleDeclaration = lazy(() => import('./pages/Citoyen').then((m) => ({ default: m.NouvelleDeclaration })));
+const NouveauSignalement = lazy(() => import('./pages/Decouvreur').then((m) => ({ default: m.NouveauSignalement })));
+const Aide = lazy(() => import('./pages/Aide').then((m) => ({ default: m.Aide })));
+const RetourPaiement = lazy(() => import('./pages/RetourPaiement').then((m) => ({ default: m.RetourPaiement })));
 
 export interface Session { compte: Compte | null; connecter: (j: string, c: Compte) => void; }
 

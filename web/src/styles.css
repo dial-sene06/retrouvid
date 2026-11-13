@@ -288,7 +288,9 @@ th{font-family:var(--f-b);font-size:11.5px;color:var(--muted);text-transform:upp
 .auth-nav a.pastille:hover{background:var(--sauge-fonce);transform:translateY(-1px)}
 /* page d'accueil : titre fin et large posé sur le visuel, comme sur Circle */
 .heros{flex:1;display:flex;flex-direction:column;justify-content:center;max-width:640px;padding:clamp(40px,8vh,90px) 0 clamp(48px,9vh,100px);margin-left:clamp(0px,5vw,72px)}
-.heros>*{animation:monter var(--d4) var(--e-out) both}
+/* le titre et le texte d'accueil glissent sans partir de l'opacité 0 : ils restent lisibles dès le premier affichage (et comptent pour le LCP) */
+@keyframes glisser{from{transform:translateY(16px)}to{transform:none}}
+.heros>*{animation:glisser var(--d4) var(--e-out) both}
 .heros>:nth-child(2){animation-delay:.08s}.heros>:nth-child(3){animation-delay:.16s}.heros>:nth-child(4){animation-delay:.24s}
 .heros h1{font-size:clamp(38px,5.6vw,68px);font-weight:300;line-height:1.04;letter-spacing:-.035em;margin-bottom:22px}
 .heros-intro{font-size:clamp(16px,1.4vw,18px);color:var(--muted);max-width:48ch;margin-bottom:30px}
@@ -543,3 +545,7 @@ th{font-family:var(--f-b);font-size:11.5px;color:var(--muted);text-transform:upp
 @media (max-width:899px){.app~.cookies,.cookies{bottom:calc(92px + env(safe-area-inset-bottom))}}
 @media (min-width:900px){.cookies{margin-inline:auto 20px;max-width:520px}}
 .auth-pied-zone{display:contents}.auth-pied a{font-weight:700}
+
+/* Performance : les sections sous la ligne de flottaison ne sont mises en page et peintes qu'à l'approche de l'écran.
+   La hauteur réservée évite que la barre de défilement saute quand elles apparaissent. */
+.auth-accueil .bloc,.auth-accueil .bande-contact{content-visibility:auto;contain-intrinsic-size:auto 640px}
