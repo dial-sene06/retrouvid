@@ -121,13 +121,7 @@ Mise en place (une fois) :
 2. Onglet **Storage** du projet : créer une base **Neon** (Postgres) et la relier au projet ; Vercel ajoute `DATABASE_URL`.
 3. **Settings → Environment Variables** : `JWT_SECRET` (longue valeur aléatoire), `PG_POOL_MAX=3`, `CORS_ORIGIN`, `APP_URL`, `VITE_SITE_URL` (l'adresse https du site), `API_PUBLIC_URL` (la même suivie de `/api`), et si besoin `SMS_MODE`, `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`, les clés `PAYDUNYA_*`.
 4. Redéployer. Chaque push sur `main` redéploie ensuite le site.
-5. Créer le premier administrateur (les comptes de démonstration, au mot de passe public, ne doivent pas être créés en production). Dans PowerShell, avec l'adresse de la base Neon (onglet Storage, « .env.local ») :
-
-```powershell
-cd api
-$env:DATABASE_URL = '<adresse Neon>'; $env:ADMIN_EMAIL = '<votre e-mail>'; $env:ADMIN_MOT_DE_PASSE = '<12 caractères ou plus>'
-npm run creer-admin
-```
+5. Créer le premier administrateur (les comptes de démonstration, au mot de passe public, ne doivent pas être créés en production) : ajouter aux variables du projet `ADMIN_EMAIL` (Config) et `ADMIN_MOT_DE_PASSE` (Secret, 12 caractères minimum), redéployer (le build lance `creer-admin --si-configure`), puis **supprimer `ADMIN_MOT_DE_PASSE`** des variables. Depuis un poste, `npm run creer-admin` fait la même chose avec `DATABASE_URL` pointant vers Neon.
 
 ## Sauvegarde et restauration
 

@@ -5,9 +5,15 @@ import { config } from '../config';
 /**
  * Crée (ou réactive) un compte administrateur, par exemple sur la base de production.
  * Les valeurs viennent de l'environnement, jamais du code : ADMIN_EMAIL, ADMIN_MOT_DE_PASSE (12 caractères minimum),
- * ADMIN_NOM, ADMIN_PRENOM, ADMIN_TELEPHONE. Exemple : voir la section « Déploiement sur Vercel » du README.
+ * ADMIN_NOM, ADMIN_PRENOM, ADMIN_TELEPHONE. Sur Vercel, le build l'appelle avec --si-configure : il suffit d'ajouter
+ * ADMIN_EMAIL et ADMIN_MOT_DE_PASSE aux variables du projet, de redéployer, puis de retirer ADMIN_MOT_DE_PASSE.
  */
 async function main() {
+  // pendant le build Vercel (--si-configure), l'étape est sautée tant que ADMIN_EMAIL n'est pas renseignée
+  if (process.argv.includes('--si-configure') && !process.env.ADMIN_EMAIL) {
+    console.log('ADMIN_EMAIL absente : aucun administrateur à créer.');
+    return;
+  }
   const email = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
   const mdp = process.env.ADMIN_MOT_DE_PASSE ?? '';
   if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('ADMIN_EMAIL manquant ou invalide');

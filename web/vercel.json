@@ -1,6 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "buildCommand": "npm ci --prefix ../api && npm run build --prefix ../api && node ../api/dist/src/db/migrate.js && npm run build",
+  "buildCommand": "npm ci --prefix ../api && npm run build --prefix ../api && node ../api/dist/src/db/migrate.js && node ../api/dist/src/db/creer-admin.js --si-configure && npm run build",
   "outputDirectory": "dist",
   "functions": {
     "api/index.js": { "maxDuration": 30 }
