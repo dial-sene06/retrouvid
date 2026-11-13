@@ -50,7 +50,9 @@ export default defineConfig(({ mode }) => {
           { src: 'icon-maskable-512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
         ],
       },
-      workbox: { navigateFallbackDenylist: [/^\/api/, /\/(sitemap\.xml|robots\.txt)$/], globIgnores: ['**/og-image.jpg'], runtimeCaching: [] },
+      // registerSW.js (script-defer) ne fait qu'enregistrer le service worker : sans ces deux options, une nouvelle version
+      // resterait en attente tant que tous les onglets du site ne sont pas fermés
+      workbox: { skipWaiting: true, clientsClaim: true, navigateFallbackDenylist: [/^\/api/, /\/(sitemap\.xml|robots\.txt)$/], globIgnores: ['**/og-image.jpg'], runtimeCaching: [] },
     }),
   ],
   server: { port: 5173, proxy: { '/api': { target: 'http://localhost:3000', changeOrigin: true, rewrite: (p) => p.replace(/^\/api/, '') } } },
