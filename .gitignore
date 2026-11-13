@@ -1,0 +1,21 @@
+# Dépendances et builds
+node_modules/
+dist/
+coverage/
+.ruff_cache/
+
+# Secrets : seuls les fichiers .env.example sont versionnés
+.env
+.env.*
+!.env.example
+
+# Sauvegardes de la base et journaux
+*.dump
+*.sql.gz
+*.log
+
+# Système et éditeurs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
