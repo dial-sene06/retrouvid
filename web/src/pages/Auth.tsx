@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { api, Compte, fdate } from '../api';
 import { Alerte, Champ, Compteur, Icone, MotDePasse, useInstall, useRevelation } from '../ui';
 import { Faq, FormContact } from './Aide';
-import { PiedSite } from './Legal';
+import { EnTeteSite, PiedSite } from './Legal';
 import { Rubans } from '../rubans';
 
 const NOMS_DOC: Record<string, string> = { cni: "Carte d'identité", permis: 'Permis de conduire', passeport: 'Passeport' };
@@ -74,18 +74,15 @@ export function Accueil() {
   const inst = useInstall();
   useRevelation();
   useEffect(() => { api('/public/stats').then(setStats).catch(() => setStats(null)); }, []);
+  // arrivée depuis un lien « /#aide » d'une autre page : la section n'existe qu'après le rendu, on y descend ensuite
+  useEffect(() => {
+    const cible = location.hash.length > 1 ? document.getElementById(decodeURIComponent(location.hash.slice(1))) : null;
+    if (cible) requestAnimationFrame(() => cible.scrollIntoView());
+  }, []);
   return (
     <div className="auth auth-accueil">
+      <EnTeteSite accueil />
       <div className="auth-in">
-        <header className="auth-haut">
-          <Link to="/" className="logo auth-logo">Retrouv<span>ID</span></Link>
-          <nav className="auth-nav" aria-label="Navigation">
-            <a href="#fonctionnement">Fonctionnement</a>
-            <a href="#confidentialite">Confidentialité</a>
-            <a href="#aide">Aide</a>
-            <Link className="pastille" to="/connexion">Connexion</Link>
-          </nav>
-        </header>
         <main id="contenu" className="heros">
           <span className="surtitre">Pièces d'identité perdues · Sénégal</span>
           <h1>Retrouvez votre pièce d'identité, sans exposer vos données.</h1>
@@ -177,9 +174,9 @@ export function Accueil() {
           </div>
           <div className="carte"><FormContact /></div>
         </section>
-
-        <PiedSite />
       </div>
+
+      <PiedSite />
     </div>
   );
 }

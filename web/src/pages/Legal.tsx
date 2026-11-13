@@ -1,22 +1,119 @@
-import { ReactNode } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useConsentement } from '../consentement';
+import { Icone } from '../ui';
+import { Rubans } from '../rubans';
 
 const MAJ = '2 novembre 2026';
 
+/** Zone qui défile : les pages publiques recouvrent l'application dans un conteneur « .auth » qui a son propre défilement. */
+const zoneDe = (el: Element | null) => el?.closest<HTMLElement>('.auth') ?? null;
+
+/**
+ * En-tête des pages publiques : il occupe toute la largeur et reste collé en haut pendant le défilement.
+ * Transparent sur le visuel d'accueil, il passe en verre dépoli dès que la page défile ; un filet vert indique la progression.
+ */
+export function EnTeteSite({ accueil = false }: { accueil?: boolean }) {
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const en = ref.current, zone = zoneDe(en);
+    if (!en || !zone) return;
+    let image = 0;
+    const maj = () => {
+      image = 0;
+      const max = zone.scrollHeight - zone.clientHeight;
+      en.classList.toggle('defile', zone.scrollTop > 8);
+      en.style.setProperty('--progres', String(max > 0 ? Math.min(1, zone.scrollTop / max) : 0));
+    };
+    const surDefilement = () => { if (!image) image = requestAnimationFrame(maj); };
+    maj();
+    zone.addEventListener('scroll', surDefilement, { passive: true });
+    return () => { zone.removeEventListener('scroll', surDefilement); cancelAnimationFrame(image); };
+  }, []);
+  return (
+    <header ref={ref} className="en-tete">
+      <div className="en-tete-in">
+        <Link to="/" className="logo auth-logo">Retrouv<span>ID</span></Link>
+        <nav className="auth-nav" aria-label="Navigation">
+          {accueil ? (
+            <>
+              <a href="#fonctionnement">Fonctionnement</a>
+              <a href="#confidentialite">Confidentialité</a>
+              <a href="#aide">Aide</a>
+            </>
+          ) : <Link to="/">Accueil</Link>}
+          <Link className="pastille" to="/connexion">Connexion</Link>
+        </nav>
+      </div>
+      <span className="en-tete-progres" aria-hidden="true" />
+    </header>
+  );
+}
+
+const ENGAGEMENTS = ['Données masquées', 'Vérification par un agent', 'Paiement Wave et Orange Money', 'Coordonnées protégées', 'Anonymisation à la clôture', 'Application installable'];
+
+/** Pied de page des pages publiques : bandeau défilant, appel à l'action, liens, puis le nom du service en très grand. */
 export function PiedSite() {
   const { rouvrir } = useConsentement();
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver !== 'function' || matchMedia('(prefers-reduced-motion: reduce)').matches) { el.classList.add('vu'); return; }
+    const obs = new IntersectionObserver(([e]) => { if (e.isIntersecting) { el.classList.add('vu'); obs.disconnect(); } }, { threshold: 0.15 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, []);
+  const remonter = () => zoneDe(ref.current)?.scrollTo({ top: 0, behavior: 'smooth' });
   return (
-    <footer className="pied-site">
-      <Link to="/" className="logo">Retrouv<span>ID</span></Link>
-      <p>Projet de fin de cycle, ESTM Dakar, Licence Téléinformatique GLAR, 2025-2026.</p>
-      <nav aria-label="Informations légales">
-        <Link to="/mentions-legales">Mentions légales</Link>
-        <Link to="/confidentialite">Confidentialité</Link>
-        <Link to="/cgu">Conditions d'utilisation</Link>
-        <button type="button" className="lien-bouton" onClick={rouvrir}>Gérer mes choix</button>
-      </nav>
+    <div className="pied-zone">
+    <footer ref={ref} className="pied-site">
+      <Rubans forme="vague" className="pied-rubans" />
+      <div className="pied-bandeau" aria-hidden="true">
+        <div className="pied-piste">
+          {[...ENGAGEMENTS, ...ENGAGEMENTS].map((m, i) => <span key={i}>{m}<i>✦</i></span>)}
+        </div>
+      </div>
+      <div className="pied-corps">
+        <div className="pied-appel">
+          <span className="surtitre">Une pièce perdue ?</span>
+          <h2>Quelqu'un l'a peut-être déjà trouvée.</h2>
+          <p>Déclarez la perte en quelques minutes. Vous êtes prévenu dès qu'un document correspondant est signalé et vérifié.</p>
+          <div className="ligne">
+            <Link className="btn clair p" to="/inscription">Déclarer une perte</Link>
+            <Link className="btn clair s" to="/inscription">Signaler un document</Link>
+          </div>
+        </div>
+        <div className="pied-colonnes">
+          <nav aria-label="Plateforme">
+            <h3>Plateforme</h3>
+            <Link to="/inscription">Créer un compte</Link>
+            <Link to="/connexion">Se connecter</Link>
+            <a href="/#fonctionnement">Fonctionnement</a>
+            <a href="/#aide">Questions fréquentes</a>
+          </nav>
+          <nav aria-label="Informations légales">
+            <h3>Informations</h3>
+            <Link to="/mentions-legales">Mentions légales</Link>
+            <Link to="/confidentialite">Confidentialité</Link>
+            <Link to="/cgu">Conditions d'utilisation</Link>
+            <button type="button" className="lien-bouton" onClick={rouvrir}>Gérer mes choix</button>
+          </nav>
+          <div>
+            <h3>Contact</h3>
+            <a href="/#contact">Écrire à l'équipe</a>
+            <span>Dakar, Sénégal</span>
+            <span>Réponse par e-mail</span>
+          </div>
+        </div>
+      </div>
+      <div className="pied-geant" aria-hidden="true"><span>Retrouv<b>ID</b></span></div>
+      <div className="pied-bas">
+        <p>© 2026 RetrouvID · Projet de fin de cycle, ESTM Dakar, Licence Téléinformatique GLAR, 2025-2026.</p>
+        <button type="button" className="pied-haut" onClick={remonter}>Haut de page<Icone nom="up" /></button>
+      </div>
     </footer>
+    </div>
   );
 }
 
@@ -24,18 +121,16 @@ export function PiedSite() {
 function Coque({ titre, retour, children }: { titre: string; retour: ReactNode; children: ReactNode }) {
   return (
     <div className="auth auth-legal">
+      <EnTeteSite />
       <div className="auth-in">
-        <header className="auth-haut">
-          <Link to="/" className="logo auth-logo">Retrouv<span>ID</span></Link>
-        </header>
         <main id="contenu" className="legal carte">
           <h1>{titre}</h1>
           <p className="muted petit">Dernière mise à jour : {MAJ}</p>
           {children}
           <p className="legal-retour">{retour}</p>
         </main>
-        <PiedSite />
       </div>
+      <PiedSite />
     </div>
   );
 }
