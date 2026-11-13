@@ -356,7 +356,7 @@ function BoutonGoogle({ onOk, onEtape, onVerif }: { onOk: (j: string, c: Compte)
 
 function Cadre({ children, enInscription = false }: { children: ReactNode; enInscription?: boolean }) {
   return (
-    <div className="auth">
+    <div className="auth auth-cadre">
       <div className="auth-in">
         <header className="auth-haut">
           <Link to="/" className="logo auth-logo">Retrouv<span>ID</span></Link>
@@ -365,7 +365,20 @@ function Cadre({ children, enInscription = false }: { children: ReactNode; enIns
             {enInscription ? <Link className="pastille" to="/connexion">Connexion</Link> : <Link className="pastille" to="/inscription">Créer un compte</Link>}
           </nav>
         </header>
-        <main id="contenu" className="auth-form">{children}</main>
+        <div className="cadre-grille">
+          {/* panneau vert : même scène que la page d'accueil, avec les garanties rappelées à côté du formulaire */}
+          <section className="cadre-scene" aria-label="Nos garanties">
+            <p className="scene-pastille"><span className="point-vivant" />{enInscription ? 'Inscription gratuite' : 'Espace personnel'}</p>
+            <Titre texte={enInscription ? 'Un compte,' : 'Content de vous'} etiquette={enInscription ? 'deux usages.' : 'revoir.'} />
+            <ul className="cadre-points">
+              <li><Icone nom="shield" taille={18} />Numéro et nom masqués pour le public</li>
+              <li><Icone nom="users" taille={18} />Chaque rapprochement vérifié par un agent</li>
+              <li><Icone nom="coin" taille={18} />Mise en relation réglée par Wave ou Orange Money</li>
+            </ul>
+            <Ambiance />
+          </section>
+          <main id="contenu" className="auth-form">{children}</main>
+        </div>
         <footer className="auth-pied-zone"><p className="auth-pied">Vos données personnelles restent masquées tant qu'un agent n'a pas validé la correspondance. <Link to="/confidentialite">Confidentialité</Link></p></footer>
       </div>
     </div>

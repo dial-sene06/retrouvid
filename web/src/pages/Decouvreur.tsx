@@ -39,7 +39,7 @@ export function NouveauSignalement() {
   }
   return (
     <form className="cote carte" onSubmit={envoyer}>
-      <h1 style={{ fontSize: 28 }}>Signaler un document trouvé</h1>
+      <h1 className="titre-page">Signaler un document trouvé</h1>
       <Alerte type="info">Les données du document ne sont jamais affichées aux autres utilisateurs. Elles servent uniquement à trouver le propriétaire.</Alerte>
       <Alerte type="warn">En envoyant ce signalement, vous acceptez que votre nom, votre téléphone et votre e-mail soient transmis au propriétaire du document, une fois qu'un agent a vérifié la correspondance et que le propriétaire l'a confirmée et réglé l'accès.</Alerte>
       <Liste id="type" label="Type de document" value={f.typeDocument} onChange={maj('typeDocument')} options={OPTIONS_DOCS} />

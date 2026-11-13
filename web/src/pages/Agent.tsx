@@ -32,7 +32,7 @@ export function Agent() {
 
   return (
     <>
-      <h1 style={{ fontSize: 28 }}>Correspondances à vérifier</h1>
+      <h1 className="titre-page">Correspondances à vérifier</h1>
       <p className="muted">Les valeurs sont partiellement masquées. Vous comparez, puis vous validez ou vous écartez.</p>
       {stats && (
         <div className="grille-kpi stats-agent">

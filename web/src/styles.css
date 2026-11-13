@@ -751,3 +751,142 @@ h1.titre-fort .etiquette{animation-name:etiquette-glisse}
   .titre-fort .mot,.titre-fort .etiquette,.doc-flottant,.statut-flottant,.bande-piste,.point-vivant::after,.scene,.scene-pastille,.scene-intro,.scene-actions{animation:none}
   .atout,.note{opacity:1;transform:none;transition:none}
 }
+
+/* =====================================================================================================================
+   Application complète, même langage que la page d'accueil : titres en capitales serrées, étiquettes et tuiles colorées
+   à ombre portée franche, panneaux vert foncé quadrillés, cartes nettes qui se soulèvent au survol
+   ===================================================================================================================== */
+@media (prefers-color-scheme:dark){:root{--ombre-dure:rgba(0,0,0,.45)}}
+.app.clair{--ombre-dure:rgba(8,40,24,.22)}
+.app.sombre{--ombre-dure:rgba(0,0,0,.45)}
+/* quadrillage réutilisable (panneaux verts) */
+.app .lateral,.bandeau,.cadre-scene,.app.sombre .carte.kpi-carte{--grille-c:rgba(234,246,238,.06)}
+
+/* ---------- connexion, inscription, code SMS : écran partagé ---------- */
+.auth.auth-cadre{background:#eef4ef}
+.auth-cadre .auth-in{align-items:stretch}
+.cadre-grille{flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(16px,3vw,40px);align-items:stretch;padding:18px 0 22px}
+.cadre-scene{position:relative;isolation:isolate;overflow:hidden;border-radius:var(--r-4);color:#eaf6ee;padding:clamp(28px,4vw,56px);display:flex;flex-direction:column;justify-content:center;min-height:540px;
+  background:radial-gradient(55% 50% at 85% 10%,rgba(143,191,165,.38),transparent 70%),radial-gradient(50% 45% at 8% 92%,rgba(96,214,150,.22),transparent 70%),linear-gradient(160deg,#0f6a41 0%,#0b4d2f 48%,#05261a 100%)}
+.cadre-scene::before{content:"";position:absolute;inset:0;z-index:-1;pointer-events:none;
+  background:linear-gradient(var(--grille-c) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grille-c) 1px,transparent 1px) 0 0/48px 48px;
+  -webkit-mask:radial-gradient(80% 80% at 40% 40%,#000,transparent);mask:radial-gradient(80% 80% at 40% 40%,#000,transparent)}
+.cadre-scene .scene-pastille{align-self:flex-start}
+.cadre-scene .titre-fort{color:#fff;font-size:clamp(38px,5vw,72px);margin:0 0 26px;max-width:11ch}
+.cadre-points{list-style:none;margin:0 0 30px;padding:0;display:grid;gap:12px;max-width:40ch}
+.cadre-points li{display:flex;align-items:center;gap:12px;color:#d6efe0;font-size:15.5px;animation:monter var(--d4) var(--e-out) both;animation-delay:calc(var(--i,0)*90ms + .35s)}
+.cadre-points li:nth-child(2){--i:1}.cadre-points li:nth-child(3){--i:2}
+.cadre-points .ic{flex:none;width:34px;height:34px;padding:8px;border-radius:10px;background:var(--menthe);color:#0b4d2f;box-shadow:0 4px 0 rgba(0,0,0,.22);rotate:-4deg}
+.cadre-points li:nth-child(2) .ic{background:var(--sable);rotate:4deg}.cadre-points li:nth-child(3) .ic{background:var(--ciel)}
+/* les documents flottants se rangent en ligne en bas du panneau */
+.cadre-scene .scene-ambiance{position:relative;inset:auto;display:flex;align-items:flex-end;gap:14px;height:auto;margin-top:auto;padding-top:10px}
+.cadre-scene .doc-flottant,.cadre-scene .statut-flottant{position:relative;left:auto;right:auto;top:auto;bottom:auto}
+.cadre-scene .doc-flottant{width:clamp(150px,13vw,190px);padding:12px 14px}
+.cadre-scene .doc-passeport{width:clamp(96px,8vw,112px)}
+.cadre-scene .doc-lignes{display:none}
+.cadre-scene .doc-type{font-size:9px;letter-spacing:.12em}
+.cadre-scene .statut-flottant{display:none}
+.auth-cadre .auth-form{margin:0;max-width:none;padding:0;justify-content:center;align-items:center}
+.auth-cadre .auth-carte{width:100%;max-width:470px;background:#fbfcf8;-webkit-backdrop-filter:none;backdrop-filter:none;border:1px solid #d6e3d8;border-radius:28px;box-shadow:0 10px 0 rgba(8,40,24,.14),0 40px 70px -50px rgba(8,40,24,.6)}
+.auth-cadre .auth-carte::after{display:none}
+.auth-carte h1{font-family:var(--f-x);font-weight:800;font-stretch:88%;text-transform:uppercase;letter-spacing:-.025em;line-height:.95;font-size:clamp(32px,3.6vw,44px);text-align:left;margin-bottom:12px}
+.auth-cadre .auth-intro{text-align:left}
+.auth-cadre .auth-carte .muted{text-align:left}
+.auth-cadre .auth-carte .champ input{border-radius:14px;border:1.5px solid #d6e3d8;background:#fff}
+.auth-cadre .auth-pied{text-shadow:none;color:#46594d}
+.auth-cadre .auth-pied-zone{padding-bottom:4px}
+.auth-cadre .auth-nav{background:#fbfcf8;border-color:#d6e3d8}
+@media (max-width:900px){
+  .cadre-grille{grid-template-columns:1fr;padding-top:12px}
+  .cadre-scene{min-height:0;padding:26px 20px}
+  .cadre-scene .titre-fort{font-size:clamp(32px,9vw,46px);margin-bottom:18px}
+  .cadre-points{margin-bottom:20px}.cadre-points li{font-size:14.5px}
+  .cadre-scene .scene-ambiance{display:none}
+  .auth-cadre .auth-carte{max-width:none;padding:26px 20px 22px}
+}
+
+/* ---------- coque de l'application ---------- */
+/* fond : plus de photo, un aplat avec un quadrillage très discret */
+.app::before{background:linear-gradient(color-mix(in srgb,var(--fg) 4%,transparent) 1px,transparent 1px) 0 0/56px 56px,linear-gradient(90deg,color-mix(in srgb,var(--fg) 4%,transparent) 1px,transparent 1px) 0 0/56px 56px,var(--page);
+  -webkit-mask:none;mask:none}
+@media (max-width:899px){.app::before{background:var(--page)}}
+.app .lateral{background:radial-gradient(90% 40% at 100% 0%,rgba(143,191,165,.3),transparent 70%),linear-gradient(170deg,#0f6a41 0%,#0b4d2f 45%,#05261a 100%)}
+.app .lateral::before{left:0;bottom:0;top:0;width:auto;right:0;height:auto;opacity:1;animation:none;-webkit-mask:linear-gradient(180deg,#000,transparent 70%);mask:linear-gradient(180deg,#000,transparent 70%);
+  background:linear-gradient(var(--grille-c) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--grille-c) 1px,transparent 1px) 0 0/40px 40px}
+.app .lateral::after{display:none}
+.lateral .logo,.logo-mobile{font-family:var(--f-x);font-weight:800;font-stretch:88%;text-transform:uppercase;letter-spacing:-.02em;font-size:27px}
+.logo-mobile{font-size:20px;white-space:nowrap}
+.lateral .logo span,.logo-mobile span{display:inline-block;margin-left:2px;padding:0 .18em .04em;border-radius:.18em;background:var(--menthe);color:#06220f;rotate:-3deg;box-shadow:0 .12em 0 rgba(0,0,0,.25)}
+.menu{gap:6px}
+.menu a{border-radius:14px;color:#d6efe0;transition:background var(--d2) var(--e-out),color var(--d2),transform var(--d3) var(--e-rebond),box-shadow var(--d2)}
+.menu a:hover{background:rgba(234,246,238,.1);color:#fff;transform:translateX(4px)}
+.menu a.actif{background:var(--menthe);color:#06220f;box-shadow:0 5px 0 rgba(0,0,0,.28);rotate:-1.2deg}
+.menu a.actif:hover{transform:none}
+.profil{border-radius:18px;background:rgba(234,246,238,.08);border:1px solid rgba(234,246,238,.16)}
+.avatar{background:var(--sable);color:#3a2a03;font-family:var(--f-x);font-weight:800;border-radius:12px;rotate:-4deg;box-shadow:0 3px 0 rgba(0,0,0,.25)}
+.salut{font-family:var(--f-x);font-weight:700;font-stretch:90%;font-size:15px;letter-spacing:.02em}
+.salut b{display:inline-block;padding:0 .3em;border-radius:.2em;background:var(--menthe);color:#06220f;rotate:-2deg}
+.cloche,.quitter-haut{border-radius:14px;border:1.5px solid var(--line);transition:transform var(--d2) var(--e-out),border-color var(--d2),color var(--d2),background var(--d2),box-shadow var(--d2)}
+.cloche:hover,.quitter-haut:hover{transform:translateY(-3px);box-shadow:0 4px 0 var(--ombre-dure)}
+.cloche.active{background:var(--menthe);color:#06220f;border-color:transparent;box-shadow:0 4px 0 var(--ombre-dure)}
+.badge{border-radius:8px;rotate:6deg}
+@media (max-width:899px){
+  .bas{background:linear-gradient(170deg,#0f6a41,#05261a);border:0;border-radius:22px;box-shadow:0 8px 0 rgba(0,0,0,.25),0 30px 50px -30px rgba(0,0,0,.6)}
+  .bas a{color:#bfdccb;border-radius:16px}
+  .bas a.actif{background:var(--menthe);color:#06220f;box-shadow:0 4px 0 rgba(0,0,0,.25)}
+}
+
+/* ---------- titres ---------- */
+.app main h1,.legal h1{font-family:var(--f-x);font-weight:800;font-stretch:88%;text-transform:uppercase;letter-spacing:-.025em;line-height:.95;font-size:clamp(34px,4.6vw,58px);margin-bottom:12px}
+.app main .carte h1.titre-page{font-size:clamp(30px,3.6vw,44px)}
+.titre-section{font-family:var(--f-x);font-weight:800;font-stretch:90%;text-transform:uppercase;letter-spacing:-.015em;font-size:clamp(20px,2.2vw,26px)}
+.titre-section::before{width:16px;height:16px;border-radius:5px;background:var(--menthe);box-shadow:0 3px 0 var(--ombre-dure);rotate:-8deg}
+.app .carte h2,.carte-tete h2{font-family:var(--f-x);font-weight:800;font-stretch:92%;text-transform:uppercase;letter-spacing:-.01em;font-size:clamp(18px,1.8vw,22px)}
+
+/* bandeau d'accueil du citoyen : même panneau que la scène de la page d'accueil */
+.bandeau{background:radial-gradient(55% 60% at 88% 0%,rgba(143,191,165,.4),transparent 70%),linear-gradient(160deg,#0f6a41 0%,#0b4d2f 50%,#05261a 100%);padding:clamp(28px,4.6vw,56px)}
+.bandeau::before{left:0;top:0;right:0;bottom:0;width:auto;height:auto;opacity:1;animation:none;-webkit-mask:radial-gradient(80% 90% at 70% 20%,#000,transparent);mask:radial-gradient(80% 90% at 70% 20%,#000,transparent);
+  background:linear-gradient(var(--grille-c) 1px,transparent 1px) 0 0/48px 48px,linear-gradient(90deg,var(--grille-c) 1px,transparent 1px) 0 0/48px 48px}
+.app main .bandeau h1{color:#fff;font-size:clamp(40px,6vw,80px);margin-bottom:16px}
+.bandeau .btn.clair.p{box-shadow:0 5px 0 rgba(0,0,0,.25)}
+
+/* ---------- composants ---------- */
+.carte{border-radius:22px;border-width:1.5px;transition:border-color var(--d3),transform var(--d3) var(--e-out),background var(--d3),box-shadow var(--d3) var(--e-out)}
+.vue .grille>.carte:hover,.kpi-carte:hover,.taches li:hover{transform:translateY(-4px);box-shadow:0 7px 0 var(--ombre-dure);border-color:var(--sauge)}
+.btn{border-radius:14px;transition:transform var(--d2) var(--e-out),background var(--d2),border-color var(--d2),color var(--d2),box-shadow var(--d2)}
+.btn.p{box-shadow:0 5px 0 var(--ombre-dure)}
+.btn.p:hover{transform:translateY(-2px);box-shadow:0 7px 0 var(--ombre-dure)}
+.btn.p:active{transform:translateY(3px);box-shadow:0 2px 0 var(--ombre-dure)}
+.btn.s{border-width:1.5px}
+.btn.s:hover{box-shadow:0 5px 0 var(--ombre-dure)}
+.btn:disabled{box-shadow:none}
+.champ input,.champ select,.champ textarea{border-width:1.5px;border-radius:14px}
+.champ input,.champ select{border-radius:14px}
+.champ input:focus,.champ select:focus,.champ textarea:focus{box-shadow:0 0 0 4px color-mix(in srgb,var(--menthe) 55%,transparent)}
+.puce{border-radius:8px;font-weight:800}
+.puce.ok{background:var(--menthe);color:#06220f}
+.puce.warn{background:var(--sable);color:#3a2a03}
+.alerte{border-radius:14px;border-style:solid;border-width:1.5px}
+.vide{border-radius:22px;border-width:2px}
+.onglets{border-radius:16px;border-width:1.5px}
+.onglets button{border-radius:12px}
+.onglets button.actif,.app.sombre .onglets button.actif{background:var(--menthe);color:#06220f;box-shadow:0 4px 0 var(--ombre-dure)}
+.etapes span::before,.etapes span::after{height:8px}
+.etapes span.fait::after{background:linear-gradient(90deg,#0f6a41,#60d696)}
+th{font-family:var(--f-x);font-weight:700;font-stretch:92%;letter-spacing:.06em;font-size:12.5px}
+.compare>div,.taches li{border-radius:16px;border-style:solid;border-width:1.5px}
+
+/* indicateurs : tuile d'icône colorée et inclinée, chiffre en capitales serrées */
+.kpi-carte::after{display:none}
+.kpi-ic{border-radius:13px;background:var(--menthe);color:#06220f;box-shadow:0 4px 0 var(--ombre-dure);rotate:-5deg;transition:rotate .5s var(--e-rebond),transform .5s var(--e-rebond)}
+.grille-kpi>:nth-child(4n+2) .kpi-ic{background:var(--sable);rotate:5deg}
+.grille-kpi>:nth-child(4n+3) .kpi-ic{background:var(--ciel)}
+.grille-kpi>:nth-child(4n+4) .kpi-ic{background:#ffc2a8;rotate:4deg}
+.kpi-carte:hover .kpi-ic{rotate:0deg;transform:scale(1.08)}
+.kpi-n{font-family:var(--f-x);font-weight:800;font-stretch:85%;font-size:clamp(40px,3.8vw,54px)}
+.tache-n{font-family:var(--f-x);font-weight:800;border-radius:14px;rotate:-4deg;box-shadow:0 4px 0 var(--ombre-dure)}
+.fil-pt{border-radius:4px;rotate:45deg;background:var(--menthe)}
+.doc{font-family:var(--f-x);font-weight:700;font-stretch:92%}
+.doc i{border-radius:5px;box-shadow:0 3px 0 var(--ombre-dure);rotate:-4deg}
+
+@media (prefers-reduced-motion:reduce){.cadre-points li{animation:none}}

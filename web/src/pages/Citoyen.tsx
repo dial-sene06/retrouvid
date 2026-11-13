@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, Compte, DOCS, ETATS_CORR, ETATS_DOSSIER, fdate, OPTIONS_DOCS } from '../api';
-import { Action, Alerte, Champ, Doc, Icone, Liste, Puce, Stat, Vide } from '../ui';
+import { Action, Alerte, Champ, Doc, Icone, Liste, Puce, Stat, Titre, Vide } from '../ui';
 import { Discussion } from '../discussion';
 import { Rubans } from '../rubans';
 import { CarteOsm, ChampLieu, distanceTexte, Pt } from '../geo';
@@ -84,7 +84,7 @@ export function Citoyen({ compte, onChange }: { compte: Compte; onChange: () => 
       <section className="bandeau">
         <Rubans forme="vague" />
         <div>
-          <h1>Bonjour {compte.prenom}</h1>
+          <Titre niveau={1} texte="Bonjour" etiquette={compte.prenom} />
           <p>Suivez vos déclarations ou signalez un document que vous avez trouvé. Vos données restent masquées jusqu'à la validation d'un agent.</p>
           <div className="ligne">
             <Link className="btn p clair" to="/declarer"><Icone nom="plus" />J'ai perdu un document</Link>
@@ -166,7 +166,7 @@ export function NouvelleDeclaration() {
   }
   return (
     <form className="cote carte" onSubmit={envoyer}>
-      <h1 style={{ fontSize: 28 }}>{id ? 'Corriger la déclaration' : 'Déclarer une perte'}</h1>
+      <h1 className="titre-page">{id ? 'Corriger la déclaration' : 'Déclarer une perte'}</h1>
       <Liste id="type" label="Type de document" value={f.typeDocument} onChange={maj('typeDocument')} options={OPTIONS_DOCS} />
       <Champ id="numero" label="Numéro du document" required value={f.numero} onChange={maj('numero')} aide="S'il vous reste une copie ou une photo. Il reste masqué pour les autres." />
       <Champ id="nom" label="Nom complet sur le document" required value={f.nomProprietaire} onChange={maj('nomProprietaire')} />
