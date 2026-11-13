@@ -388,7 +388,9 @@ th{font-family:var(--f-b);font-size:11.5px;color:var(--muted);text-transform:upp
 .rubans{position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none}
 /* « Comment ça marche » immersif : la section fait trois écrans de haut, son panneau sombre reste collé à l'écran
    et les étapes 01, 02, 03 se remplacent en fondu au fil du défilement (variable --avance posée par le script) */
-.immersif{position:relative;height:300vh;max-width:1120px;margin:0 auto clamp(48px,7vw,96px)}
+/* toute la largeur de l'écran, avec la même petite marge que la scène d'accueil ; le texte reste aligné sur la colonne de 1120 px */
+.immersif{position:relative;height:300vh;margin:0 calc(clamp(8px,1.2vw,16px) - clamp(16px,6vw,80px)) clamp(48px,7vw,96px)}
+.immersif .immersif-contenu{padding-inline:max(clamp(26px,5vw,60px),calc((100% - 1120px) / 2))}
 .immersif-colle{position:sticky;top:88px;height:calc(100vh - 104px);min-height:500px;overflow:hidden;border-radius:var(--r-4);color:#eaf5ee;
   background:radial-gradient(120% 70% at 50% 115%,#1d5a3c 0%,transparent 60%),linear-gradient(180deg,#03130b 0%,#062114 55%,#0a2c1b 100%)}
 /* brume qui dérive en bas du panneau, comme la fumée du site de référence */
