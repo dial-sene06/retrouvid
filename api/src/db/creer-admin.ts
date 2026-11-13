@@ -9,9 +9,10 @@ import { config } from '../config';
  * ADMIN_EMAIL et ADMIN_MOT_DE_PASSE aux variables du projet, de redéployer, puis de retirer ADMIN_MOT_DE_PASSE.
  */
 async function main() {
-  // pendant le build Vercel (--si-configure), l'étape est sautée tant que ADMIN_EMAIL n'est pas renseignée
-  if (process.argv.includes('--si-configure') && !process.env.ADMIN_EMAIL) {
-    console.log('ADMIN_EMAIL absente : aucun administrateur à créer.');
+  // pendant le build Vercel (--si-configure), l'étape est sautée sans e-mail ET mot de passe : une fois le compte créé,
+  // ADMIN_MOT_DE_PASSE est retiré des variables et les builds suivants ne touchent plus au compte
+  if (process.argv.includes('--si-configure') && !(process.env.ADMIN_EMAIL && process.env.ADMIN_MOT_DE_PASSE)) {
+    console.log('ADMIN_EMAIL ou ADMIN_MOT_DE_PASSE absente : aucun administrateur à créer.');
     return;
   }
   const email = (process.env.ADMIN_EMAIL ?? '').trim().toLowerCase();
