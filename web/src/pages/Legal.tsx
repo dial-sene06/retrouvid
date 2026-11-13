@@ -1,7 +1,7 @@
 import { ReactNode, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useConsentement } from '../consentement';
-import { Icone } from '../ui';
+import { Icone, Titre } from '../ui';
 import { Rubans } from '../rubans';
 
 const MAJ = '2 novembre 2026';
@@ -77,7 +77,7 @@ export function PiedSite() {
       <div className="pied-corps">
         <div className="pied-appel">
           <span className="surtitre">Une pièce perdue ?</span>
-          <h2>Quelqu'un l'a peut-être déjà trouvée.</h2>
+          <Titre texte="Quelqu'un l'a peut-être" etiquette="déjà trouvée." />
           <p>Déclarez la perte en quelques minutes. Vous êtes prévenu dès qu'un document correspondant est signalé et vérifié.</p>
           <div className="ligne">
             <Link className="btn clair p" to="/inscription">Déclarer une perte</Link>

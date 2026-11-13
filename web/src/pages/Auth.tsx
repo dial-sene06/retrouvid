@@ -1,7 +1,7 @@
 import { FormEvent, ReactNode, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { api, Compte, fdate } from '../api';
-import { Alerte, Champ, Compteur, Icone, MotDePasse, useInstall, useRevelation } from '../ui';
+import { Alerte, Champ, Compteur, Icone, MotDePasse, Titre, useInstall, useRevelation } from '../ui';
 import { Faq, FormContact } from './Aide';
 import { EnTeteSite, PiedSite } from './Legal';
 import { Rubans } from '../rubans';
@@ -50,7 +50,7 @@ function ParcoursImmersif() {
         <div className="immersif-contenu">
           <div>
             <span className="surtitre">Comment ça marche</span>
-            <h2 id="titre-fonctionnement">Trois étapes, aucune donnée exposée</h2>
+            <Titre id="titre-fonctionnement" texte="Trois étapes, aucune" etiquette="donnée exposée" />
           </div>
           <ol className="immersif-etapes">
             {ETAPES_PARCOURS.map((e, i) => (
@@ -69,6 +69,39 @@ function ParcoursImmersif() {
   );
 }
 
+/** Garanties de la plateforme, affichées en grille avec une tuile d'icône colorée. */
+const ATOUTS = [
+  { icone: 'shield', ton: 'menthe', titre: 'Données masquées', texte: "Le numéro et le nom du document ne sont jamais affichés en clair au public. L'agent ne voit qu'une partie des valeurs." },
+  { icone: 'users', ton: 'sable', titre: 'Un agent vérifie', texte: 'Chaque rapprochement proposé par la plateforme est contrôlé par un agent avant toute mise en relation.' },
+  { icone: 'coin', ton: 'ciel', titre: 'Paiement mobile', texte: 'La mise en relation se règle par Wave ou Orange Money, sans carte bancaire.' },
+  { icone: 'bell', ton: 'ciel', titre: 'Alerte à chaque étape', texte: 'Vous êtes prévenu dès qu’un document correspondant est signalé, validé, puis remis.' },
+  { icone: 'trash', ton: 'menthe', titre: 'Effacé à la clôture', texte: 'Une fois la pièce rendue, le numéro, le nom, la photo, les messages et les positions sont supprimés.' },
+  { icone: 'download', ton: 'sable', titre: 'Installable', texte: "RetrouvID s'ajoute à l'écran d'accueil du téléphone, comme une application, sans passer par un magasin." },
+] as const;
+
+/** Bandeaux inclinés qui se croisent et défilent en sens contraires. */
+function BandesCroisees() {
+  const piste = (mots: string[]) => [...mots, ...mots].map((m, i) => <span key={i}>{m}<i>✱</i></span>);
+  return (
+    <div className="bandes" aria-hidden="true">
+      <div className="bande bande-1"><div className="bande-piste">{piste(['Déclarer', 'Signaler', 'Vérifier', 'Payer', 'Récupérer'])}</div></div>
+      <div className="bande bande-2"><div className="bande-piste">{piste(["Carte d'identité", 'Permis de conduire', 'Passeport', 'Partout au Sénégal'])}</div></div>
+    </div>
+  );
+}
+
+/** Mini-documents qui flottent autour du titre d'accueil (valeurs fictives et masquées). */
+function Ambiance() {
+  return (
+    <div className="scene-ambiance" aria-hidden="true">
+      <div className="doc-flottant doc-cni"><span className="doc-type">Carte d'identité</span><span className="doc-puce" /><span className="doc-num">1 75 •••• •• 4821</span><span className="doc-lignes"><i /><i /></span></div>
+      <div className="doc-flottant doc-permis"><span className="doc-type">Permis de conduire</span><span className="doc-puce" /><span className="doc-num">SN-••••-307</span><span className="doc-lignes"><i /><i /></span></div>
+      <div className="doc-flottant doc-passeport"><span className="doc-type">Passeport</span><span className="doc-embleme" /><span className="doc-num">A•••••19</span></div>
+      <div className="statut-flottant"><span className="statut-ic"><Icone nom="check" taille={16} /></span><span><b>Correspondance vérifiée</b><small>par un agent</small></span></div>
+    </div>
+  );
+}
+
 export function Accueil() {
   const [stats, setStats] = useState<{ declarations: number; signalements: number; restitues: number; recents: { type_document: string; date: string }[] } | null>(null);
   const inst = useInstall();
@@ -82,17 +115,18 @@ export function Accueil() {
   return (
     <div className="auth auth-accueil">
       <EnTeteSite accueil />
-      <div className="auth-in">
-        <main id="contenu" className="heros">
-          <span className="surtitre">Pièces d'identité perdues · Sénégal</span>
-          <h1>Retrouvez votre pièce d'identité, sans exposer vos données.</h1>
-          <p className="heros-intro">Déclarez la perte de votre carte d'identité, de votre permis ou de votre passeport. Si quelqu'un l'a trouvé, un agent vérifie la correspondance avant que vous ne receviez ses coordonnées.</p>
-          <div className="ligne heros-actions">
-            <Link className="btn p" to="/inscription">Créer un compte</Link>
-            <Link className="btn s" to="/connexion">Se connecter</Link>
+      <main id="contenu" className="scene">
+        <Ambiance />
+        <div className="scene-contenu">
+          <p className="scene-pastille"><span className="point-vivant" />Pièces d'identité perdues · Sénégal</p>
+          <Titre niveau={1} texte="Retrouvez votre pièce d'identité" etiquette="en sécurité." />
+          <p className="scene-intro">Déclarez la perte de votre carte d'identité, de votre permis ou de votre passeport. Si quelqu'un l'a trouvé, un agent vérifie la correspondance avant que vous ne receviez ses coordonnées.</p>
+          <div className="ligne scene-actions">
+            <Link className="btn clair p" to="/inscription">Créer un compte</Link>
+            <Link className="btn clair s" to="/connexion">Se connecter</Link>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
 
       <div className="accueil-suite" role="region" aria-label="Présentation du service">
         {stats && (
@@ -103,27 +137,48 @@ export function Accueil() {
           </section>
         )}
 
+        <section className="bloc revele" aria-labelledby="titre-atouts">
+          <div className="tete-centre">
+            <Titre id="titre-atouts" texte="Pourquoi" etiquette="RetrouvID" ton="sable" />
+            <p>Ce qui protège chaque dossier, de la déclaration à la remise.</p>
+          </div>
+          <div className="atouts">
+            {ATOUTS.map((a, i) => (
+              <article key={a.titre} className="atout" style={{ '--i': i } as React.CSSProperties}>
+                <span className="tuile" data-ton={a.ton}><Icone nom={a.icone} taille={22} /></span>
+                <h3>{a.titre}</h3>
+                <p>{a.texte}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <BandesCroisees />
+
         <ParcoursImmersif />
 
         <section className="bloc revele" id="services">
-          <div className="bloc-tete bloc-tete-ligne">
-            <div><span className="surtitre">Vos démarches</span><h2>Ce que vous pouvez faire</h2></div>
-            <p className="muted">Un seul compte sert à déclarer une perte comme à signaler un document trouvé.</p>
+          <div className="tete-centre">
+            <Titre texte="Ce que vous pouvez" etiquette="faire" ton="ciel" />
+            <p>Un seul compte sert à déclarer une perte comme à signaler un document trouvé.</p>
           </div>
           <div className="grille services">
             <article className="carte service">
+              <span className="tuile" data-ton="menthe"><Icone nom="search" taille={22} /></span>
               <span className="surtitre">Perte</span>
               <h3>J'ai perdu un document</h3>
               <p>Vous décrivez la perte et suivez chaque étape depuis votre espace. Vous êtes prévenu à chaque changement.</p>
               <Link className="lien-fleche" to="/inscription">Déclarer une perte<Icone nom="up" /></Link>
             </article>
             <article className="carte service">
+              <span className="tuile" data-ton="sable"><Icone nom="flag" taille={22} /></span>
               <span className="surtitre">Trouvaille</span>
               <h3>J'ai trouvé un document</h3>
               <p>Vous le signalez avec une photo facultative. Votre nom et votre téléphone ne sont transmis qu'après vérification.</p>
               <Link className="lien-fleche" to="/inscription">Signaler un document<Icone nom="up" /></Link>
             </article>
             <article className="carte service">
+              <span className="tuile" data-ton="ciel"><Icone nom="shield" taille={22} /></span>
               <span className="surtitre">Vérification</span>
               <h3>Un agent contrôle</h3>
               <p>Il compare les valeurs masquées, la distance entre les deux lieux et, si elle existe, la photo. Il valide ou il écarte.</p>
@@ -132,10 +187,18 @@ export function Accueil() {
           </div>
         </section>
 
+        <section className="dialogue revele" aria-labelledby="titre-dialogue">
+          <p className="note note-g"><b>Vous :</b>J'ai perdu ma carte d'identité dans un taxi. Par où commencer ?</p>
+          <p className="note note-d"><b>RetrouvID :</b>Déclarez la perte une fois. Dès qu'un document correspondant est signalé et vérifié, vous êtes prévenu.</p>
+          <Titre id="titre-dialogue" texte="Une perte, une alerte," etiquette="une remise." ton="menthe" />
+          <p className="dialogue-texte">Vous n'avez pas à surveiller les réseaux sociaux : la plateforme compare chaque nouveau signalement à votre déclaration.</p>
+          <Link className="btn p" to="/inscription">Déclarer une perte</Link>
+        </section>
+
         <section className="bloc bloc-duo revele" id="confidentialite">
           <div>
             <span className="surtitre">Confidentialité</span>
-            <h2>Vos données restent protégées</h2>
+            <Titre texte="Vos données restent" etiquette="protégées" ton="menthe" />
             <ul className="points">
               <li>Le numéro et le nom du document sont masqués pour tous, sauf à l'agent qui compare, et en partie seulement.</li>
               <li>Vos coordonnées ne sont transmises qu'après validation de l'agent, confirmation du propriétaire et paiement.</li>
@@ -145,7 +208,7 @@ export function Accueil() {
           </div>
           <div id="restitues">
             <span className="surtitre">En direct</span>
-            <h2>Derniers documents restitués</h2>
+            <Titre texte="Derniers documents" etiquette="restitués" ton="sable" />
             {stats && stats.recents.length > 0 ? (
               <ul className="recents">
                 {stats.recents.map((r, i) => (
@@ -157,14 +220,14 @@ export function Accueil() {
         </section>
 
         <section className="bloc revele" id="aide">
-          <div className="bloc-tete"><span className="surtitre">Aide</span><h2>Questions fréquentes</h2></div>
+          <div className="tete-centre"><Titre texte="Questions" etiquette="fréquentes" ton="ciel" /></div>
           <div className="carte"><Faq /></div>
         </section>
 
         <section className="bande-contact revele" id="contact">
           <Rubans forme="vague" />
           <div className="bande-texte">
-            <h2>Une question ?</h2>
+            <Titre texte="Une" etiquette="question ?" ton="sable" />
             <p>Écrivez-nous. Le message arrive chez l'administrateur de la plateforme, qui vous répond par e-mail.</p>
             {(inst.peut || inst.installee) && (
               <p>{inst.peut

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from 'react';
+import { CSSProperties, Fragment, ReactNode, useEffect, useState } from 'react';
 import { DOCS, imageProtegee } from './api';
 
 const ICONES: Record<string, string> = {
@@ -215,4 +215,22 @@ export function useInstall() {
   }, []);
   const installee = fait || (typeof matchMedia === 'function' && matchMedia('(display-mode: standalone)').matches);
   return { peut: !!evt && !installee, installee, installer: async () => { if (!evt) return; evt.prompt(); await evt.userChoice.catch(() => null); setEvt(null); } };
+}
+
+/**
+ * Grand titre des pages publiques : capitales serrées, mots qui montent l'un après l'autre,
+ * et dernier groupe de mots posé sur une étiquette inclinée de couleur (menthe, sable ou ciel).
+ * Dans un bloc « .revele » ou dans le pied de page, l'animation attend que le bloc entre à l'écran.
+ */
+export function Titre({ niveau = 2, texte, etiquette, ton = 'menthe', id, className = '' }: {
+  niveau?: 1 | 2; texte: string; etiquette?: string; ton?: 'menthe' | 'sable' | 'ciel'; id?: string; className?: string;
+}) {
+  const H = niveau === 1 ? 'h1' : 'h2';
+  const mots = texte.split(' ');
+  return (
+    <H id={id} className={`titre-fort ${className}`.trim()}>
+      {mots.map((m, i) => <Fragment key={i}><span className="mot" style={{ '--i': i } as CSSProperties}>{m}</span>{' '}</Fragment>)}
+      {etiquette && <span className="etiquette" data-ton={ton} style={{ '--i': mots.length } as CSSProperties}>{etiquette}</span>}
+    </H>
+  );
 }
