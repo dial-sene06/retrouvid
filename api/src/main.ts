@@ -26,10 +26,10 @@ export function forcerHttps(req: Request, res: Response, next: NextFunction) {
 }
 
 export function configurer(app: INestApplication) {
-  if (config.forceHttps()) {
-    (app as any).set('trust proxy', 1);
-    app.use(forcerHttps);
-  }
+  // Derrière un proxy (TLS ou Vercel), l'adresse du client est dans X-Forwarded-For : sans cela, tous les visiteurs
+  // auraient l'adresse du proxy et partageraient la même limite de connexions.
+  if (config.forceHttps() || process.env.VERCEL) (app as any).set('trust proxy', 1);
+  if (config.forceHttps()) app.use(forcerHttps);
   app.use(helmet({ hsts: config.forceHttps() ? { maxAge: 31536000, includeSubDomains: true } : false }));
   // les photos arrivent en base64 (2 Mo maximum une fois décodées)
   (app as any).useBodyParser?.('json', { limit: '4mb' });

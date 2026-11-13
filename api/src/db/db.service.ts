@@ -4,7 +4,8 @@ import { config } from '../config';
 
 @Injectable()
 export class DbService implements OnModuleDestroy {
-  readonly pool = new Pool({ connectionString: config.databaseUrl(), max: 10 });
+  // en serverless, chaque instance garde peu de connexions : la base (Neon) les mutualise de son côté
+  readonly pool = new Pool({ connectionString: config.databaseUrl(), max: Number(process.env.PG_POOL_MAX ?? 10), idleTimeoutMillis: 10000 });
 
   async query<T extends QueryResultRow = any>(sql: string, params: unknown[] = []): Promise<T[]> {
     return (await this.pool.query<T>(sql, params)).rows;

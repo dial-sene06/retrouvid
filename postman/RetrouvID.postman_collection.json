@@ -1,0 +1,1887 @@
+{
+  "info": {
+    "name": "RetrouvID API",
+    "description": "Tests de l'API RetrouvID : parcours complet d'une pièce perdue puis retrouvée, contrôles d'accès et supervision.\n\nÀ lancer dans l'ordre (Runner de Postman ou Newman). Renseigner dans l'environnement `adminEmail` et `adminMotDePasse` (un compte administrateur existant). Les citoyens et l'agent sont créés à chaque exécution avec des adresses uniques.\n\nLe parcours s'arrête à l'ouverture du paiement : le paiement lui-même se fait sur la page PayDunya, hors de l'API.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "motDePasseTest",
+      "value": "MotDePasse-Postman1"
+    }
+  ],
+  "event": [
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "pm.test('répond en moins de 3 s', () => pm.expect(pm.response.responseTime).to.be.below(3000));",
+          "if (pm.response.code >= 400) pm.test(\"l'erreur ne divulgue pas de détail interne\", () => pm.expect(pm.response.text()).not.to.match(/\\.(js|ts):\\d+|QueryFailedError|\"stack\"/));"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Visiteur",
+      "description": "Routes publiques et refus attendus, sans compte.",
+      "item": [
+        {
+          "name": "Statistiques publiques",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const r = pm.response.json();",
+                  "pm.test('compteurs numériques', () => { pm.expect(r.declarations).to.be.a('number'); pm.expect(r.signalements).to.be.a('number'); pm.expect(r.restitues).to.be.a('number'); });",
+                  "pm.test('aucune donnée personnelle', () => pm.expect(pm.response.text()).not.to.match(/numero|nom_proprietaire|telephone|email/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/public/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "public",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Configuration Google",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('clé clientId présente', () => pm.expect(pm.response.json()).to.have.property('clientId'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/google/config",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "google",
+                "config"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Profil sans jeton refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/moi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "moi"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Jeton falsifié refusé",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('jeton_faux', 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ4In0.signature-fausse');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_faux}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/moi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "moi"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Inscription invalide refusée",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));",
+                  "pm.test('les erreurs de validation sont listées', () => pm.expect(pm.response.json().message).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/inscription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "inscription"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"X\",\n  \"prenom\": \"Y\",\n  \"email\": \"pas-un-email\",\n  \"telephone\": \"abc\",\n  \"motDePasse\": \"123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Champ inconnu refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/connexion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "connexion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"a@b.sn\",\n  \"motDePasse\": \"x\",\n  \"role\": \"admin\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion avec mauvais mot de passe",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 401', () => pm.response.to.have.status(401));",
+                  "pm.test(\"le message ne dit pas si l'e-mail existe\", () => pm.expect(pm.response.json().message).not.to.match(/existe pas|inconnu/i));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/connexion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "connexion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"inconnu@exemple.sn\",\n  \"motDePasse\": \"mauvais-mot-de-passe\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "2. Comptes citoyens",
+      "description": "Le propriétaire (perd le document) et le découvreur (le trouve). Code SMS simulé.",
+      "item": [
+        {
+          "name": "Inscription du propriétaire : demande du code SMS",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('email_proprio', 'postman.proprio.' + Date.now() + '@exemple.sn');",
+                  "pm.collectionVariables.set('tel_proprio', '77' + String(Math.floor(1000000 + Math.random() * 8999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('une vérification du téléphone est demandée', () => pm.expect(r.verificationRequise).to.eql(true));",
+                  "pm.test('le numéro affiché est masqué', () => pm.expect(r.telephone).to.include('•'));",
+                  "pm.test('code fourni (mode SMS simulé)', () => pm.expect(r.codeSimule).to.match(/^[0-9]{6}$/));",
+                  "pm.collectionVariables.set('verif_proprio', r.verificationId);",
+                  "pm.collectionVariables.set('code_proprio', r.codeSimule);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/inscription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "inscription"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Postman\",\n  \"prenom\": \"Proprio\",\n  \"email\": \"{{email_proprio}}\",\n  \"telephone\": \"{{tel_proprio}}\",\n  \"motDePasse\": \"{{motDePasseTest}}\",\n  \"accepteCgu\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription du propriétaire : mauvais code refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400 ou 401', () => pm.expect(pm.response.code).to.be.oneOf([400, 401]));",
+                  "pm.test('aucun jeton délivré', () => pm.expect(pm.response.text()).not.to.include('jeton'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationId\": \"{{verif_proprio}}\",\n  \"code\": \"000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription du propriétaire : vérification du code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200 ou 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const r = pm.response.json();",
+                  "pm.test('un jeton JWT est renvoyé', () => pm.expect(r.jeton.split('.')).to.have.length(3));",
+                  "pm.test('le compte est citoyen', () => pm.expect(r.compte.role).to.eql('citoyen'));",
+                  "pm.test('le mot de passe ne revient jamais', () => pm.expect(pm.response.text()).not.to.match(/mot_de_passe|motDePasse/));",
+                  "pm.collectionVariables.set('jeton_proprio', r.jeton);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationId\": \"{{verif_proprio}}\",\n  \"code\": \"{{code_proprio}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription du découvreur : demande du code SMS",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('email_decouvreur', 'postman.decouvreur.' + Date.now() + '@exemple.sn');",
+                  "pm.collectionVariables.set('tel_decouvreur', '77' + String(Math.floor(1000000 + Math.random() * 8999999)));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('une vérification du téléphone est demandée', () => pm.expect(r.verificationRequise).to.eql(true));",
+                  "pm.test('le numéro affiché est masqué', () => pm.expect(r.telephone).to.include('•'));",
+                  "pm.test('code fourni (mode SMS simulé)', () => pm.expect(r.codeSimule).to.match(/^[0-9]{6}$/));",
+                  "pm.collectionVariables.set('verif_decouvreur', r.verificationId);",
+                  "pm.collectionVariables.set('code_decouvreur', r.codeSimule);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/inscription",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "inscription"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Postman\",\n  \"prenom\": \"Decouvreur\",\n  \"email\": \"{{email_decouvreur}}\",\n  \"telephone\": \"{{tel_decouvreur}}\",\n  \"motDePasse\": \"{{motDePasseTest}}\",\n  \"accepteCgu\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription du découvreur : mauvais code refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400 ou 401', () => pm.expect(pm.response.code).to.be.oneOf([400, 401]));",
+                  "pm.test('aucun jeton délivré', () => pm.expect(pm.response.text()).not.to.include('jeton'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationId\": \"{{verif_decouvreur}}\",\n  \"code\": \"000000\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Inscription du découvreur : vérification du code",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200 ou 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const r = pm.response.json();",
+                  "pm.test('un jeton JWT est renvoyé', () => pm.expect(r.jeton.split('.')).to.have.length(3));",
+                  "pm.test('le compte est citoyen', () => pm.expect(r.compte.role).to.eql('citoyen'));",
+                  "pm.test('le mot de passe ne revient jamais', () => pm.expect(pm.response.text()).not.to.match(/mot_de_passe|motDePasse/));",
+                  "pm.collectionVariables.set('jeton_decouvreur', r.jeton);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verification",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "verification"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"verificationId\": \"{{verif_decouvreur}}\",\n  \"code\": \"{{code_decouvreur}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Profil du propriétaire",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test(\"c'est bien le propriétaire\", () => pm.expect(pm.response.json().email).to.eql(pm.collectionVariables.get('email_proprio')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/moi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "moi"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3. Déclaration et signalement",
+      "description": "La perte et la trouvaille du même document : le serveur doit les rapprocher seul.",
+      "item": [
+        {
+          "name": "Déclarer une perte",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('numeroDocument', 'PM' + Date.now());"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "const r = pm.response.json();",
+                  "pm.test('identifiant renvoyé', () => pm.expect(r.id).to.match(/^[0-9a-f-]{36}$/));",
+                  "pm.collectionVariables.set('declarationId', r.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/declarations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "declarations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeDocument\": \"cni\",\n  \"numero\": \"{{numeroDocument}}\",\n  \"nomProprietaire\": \"Postman Proprio\",\n  \"dateNaissance\": \"1998-05-14\",\n  \"lieuPerte\": \"Marché Sandaga, Dakar\",\n  \"datePerte\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Déclaration sans jeton refusée",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/declarations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "declarations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeDocument\": \"cni\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Signaler le document trouvé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('signalementId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_decouvreur}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/signalements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "signalements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeDocument\": \"cni\",\n  \"numero\": \"{{numeroDocument}}\",\n  \"nomSurDocument\": \"POSTMAN PROPRIO\",\n  \"dateNaissance\": \"1998-05-14\",\n  \"lieuTrouve\": \"Gare routière des Pompiers\",\n  \"dateTrouve\": \"2026-11-02\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Mes déclarations",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('la déclaration est listée', () => pm.expect(pm.response.json().map((d) => d.id)).to.include(pm.collectionVariables.get('declarationId')));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/declarations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "declarations"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Correspondance créée automatiquement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json().find((x) => x.cote === 'perte');",
+                  "pm.test('une correspondance côté perte', () => pm.expect(c).to.be.an('object'));",
+                  "pm.test('en attente de vérification', () => pm.expect(c.etat).to.eql('en_verification'));",
+                  "pm.test('le numéro est masqué', () => pm.expect(c.numero).to.not.eql(pm.collectionVariables.get('numeroDocument')));",
+                  "pm.test('rien du découvreur avant la validation', () => pm.expect(c.signalement).to.eql(null));",
+                  "pm.collectionVariables.set('correspondanceId', c.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4. Agent",
+      "description": "L'administrateur crée un agent, qui vérifie la correspondance sur des données masquées.",
+      "item": [
+        {
+          "name": "Connexion administrateur",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200 ou 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const r = pm.response.json();",
+                  "pm.test('pas de code SMS pour un administrateur', () => pm.expect(r.verificationRequise).to.not.eql(true));",
+                  "pm.test('rôle admin', () => pm.expect(r.compte.role).to.eql('admin'));",
+                  "pm.collectionVariables.set('jeton_admin', r.jeton);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/connexion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "connexion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"motDePasse\": \"{{adminMotDePasse}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Créer un agent",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('email_agent', 'postman.agent.' + Date.now() + '@exemple.sn');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set('agentId', pm.response.json().id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/agents",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "agents"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nom\": \"Postman\",\n  \"prenom\": \"Agent\",\n  \"email\": \"{{email_agent}}\",\n  \"telephone\": \"771112233\",\n  \"motDePasse\": \"{{motDePasseTest}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Connexion agent (sans code SMS)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200 ou 201', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const r = pm.response.json();",
+                  "pm.test('jeton direct, sans vérification SMS', () => pm.expect(r.jeton).to.be.a('string'));",
+                  "pm.collectionVariables.set('jeton_agent', r.jeton);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/connexion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "connexion"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_agent}}\",\n  \"motDePasse\": \"{{motDePasseTest}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Correspondances à vérifier",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "const c = pm.response.json().find((x) => x.id === pm.collectionVariables.get('correspondanceId'));",
+                  "pm.test('la correspondance est dans la file', () => pm.expect(c).to.be.an('object'));",
+                  "pm.test(\"l'agent ne voit jamais le numéro complet\", () => pm.expect(JSON.stringify(c)).not.to.include(pm.collectionVariables.get('numeroDocument')));",
+                  "pm.test(\"ni l'e-mail des citoyens\", () => pm.expect(JSON.stringify(c)).not.to.match(/@exemple\\.sn/));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_agent}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agent/correspondances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agent",
+                "correspondances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Un citoyen ne peut pas valider à la place de l'agent",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agent/correspondances/{{correspondanceId}}/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agent",
+                "correspondances",
+                "{{correspondanceId}}",
+                "valider"
+              ]
+            }
+          }
+        },
+        {
+          "name": "L'agent valide",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_agent}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agent/correspondances/{{correspondanceId}}/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agent",
+                "correspondances",
+                "{{correspondanceId}}",
+                "valider"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "5. Confirmation et paiement",
+      "description": "Le propriétaire confirme ; les coordonnées restent bloquées tant que PayDunya n'a pas confirmé le paiement.",
+      "item": [
+        {
+          "name": "Coordonnées refusées avant confirmation",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/coordonnees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "coordonnees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Le propriétaire confirme",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 201', () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "valider"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Le découvreur ne peut pas confirmer à sa place",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_decouvreur}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/valider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "valider"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Coordonnées toujours refusées avant paiement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/coordonnees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "coordonnees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Ouvrir le paiement (montant envoyé ignoré)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('201 (PayDunya configuré) ou 503 (clés absentes)', () => pm.expect(pm.response.code).to.be.oneOf([201, 503]));",
+                  "if (pm.response.code === 201) {",
+                  "  const r = pm.response.json();",
+                  "  pm.test('montant fixé par le serveur', () => pm.expect(r.montant).to.eql(1000));",
+                  "  pm.test('page de paiement hébergée par PayDunya', () => pm.expect(r.url).to.match(/^https:\\/\\/([a-z0-9-]+\\.)*paydunya\\.com\\//));",
+                  "  pm.test('aucune clé PayDunya renvoyée', () => pm.expect(pm.response.text()).not.to.match(/MASTER|PRIVATE|TOKEN/i));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/payer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "payer"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"montant\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Statut du paiement",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('pas encore payé', () => pm.expect(pm.response.json().etat).to.eql('validee_citoyen'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/{{correspondanceId}}/paiement",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "{{correspondanceId}}",
+                "paiement"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Notification PayDunya falsifiée refusée",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/paiements/paydunya/ipn",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "paiements",
+                "paydunya",
+                "ipn"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"data\": {\n    \"invoice\": {\n      \"token\": \"faux\"\n    },\n    \"hash\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "6. Contrôle d'accès",
+      "description": "Chaque rôle reste dans son périmètre.",
+      "item": [
+        {
+          "name": "Un citoyen ne voit pas le tableau admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Un agent ne voit pas le tableau admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_agent}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Un citoyen ne voit pas la file des agents",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 403', () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_decouvreur}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/agent/correspondances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "agent",
+                "correspondances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Le découvreur ne modifie pas la déclaration du propriétaire",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('403 ou 404', () => pm.expect(pm.response.code).to.be.oneOf([403, 404]));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_decouvreur}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/declarations/{{declarationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "declarations",
+                "{{declarationId}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"typeDocument\": \"cni\",\n  \"numero\": \"PIRATE123\",\n  \"nomProprietaire\": \"Pirate\",\n  \"lieuPerte\": \"Ailleurs\",\n  \"datePerte\": \"2026-11-01\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Identifiant invalide refusé",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 400', () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/correspondances/pas-un-uuid/coordonnees",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "correspondances",
+                "pas-un-uuid",
+                "coordonnees"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Notifications du propriétaire",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('au moins une notification', () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_proprio}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "notifications"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "7. Administrateur",
+      "description": "Supervision, puis désactivation de l'agent de test.",
+      "item": [
+        {
+          "name": "Tableau de bord",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/stats",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "stats"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Correspondances",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('liste', () => pm.expect(pm.response.json()).to.be.an('array'));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/correspondances",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "correspondances"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Journal des actions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));",
+                  "pm.test('des actions sont journalisées', () => pm.expect(pm.response.json().length).to.be.above(0));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/journal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "journal"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Désactiver l'agent de test",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 200', () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/comptes/{{agentId}}/actif",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "comptes",
+                "{{agentId}}",
+                "actif"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"actif\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "L'agent désactivé perd l'accès aussitôt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('statut 401', () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jeton_agent}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/moi",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "moi"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

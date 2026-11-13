@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { Client } from 'pg';
 import { config } from '../config';
@@ -7,7 +7,8 @@ export async function migrate(url = config.databaseUrl()) {
   const c = new Client({ connectionString: url });
   await c.connect();
   await c.query('CREATE TABLE IF NOT EXISTS schema_migrations (nom text PRIMARY KEY, applique_le timestamptz NOT NULL DEFAULT now())');
-  const dir = join(__dirname, '..', '..', 'migrations');
+  // src/db (ts-node) ou dist/src/db (code compilé, utilisé au build sur Vercel) : on remonte jusqu'au dossier migrations
+  const dir = [join(__dirname, '..', '..', 'migrations'), join(__dirname, '..', '..', '..', 'migrations')].find((d) => existsSync(d))!;
   for (const f of readdirSync(dir).filter((x) => x.endsWith('.sql')).sort()) {
     const done = await c.query('SELECT 1 FROM schema_migrations WHERE nom = $1', [f]);
     if (done.rowCount) continue;

@@ -96,6 +96,39 @@ Position GPS facultative sur les déclarations et les signalements. Le navigateu
 
 Mesure de performance (volume de 5 000 déclarations et 5 000 signalements) : `MESURE=1 npx jest test/mesure.spec.ts --runInBand`.
 
+## Tests de l'API avec Postman
+
+Le dossier `postman/` contient une collection de 43 requêtes (144 assertions) qui rejoue le parcours complet : visiteur, inscription de deux citoyens avec le code SMS simulé, déclaration et signalement du même document, correspondance automatique, validation par un agent créé pour l'occasion, confirmation, ouverture du paiement, contrôles d'accès par rôle, puis supervision par l'administrateur.
+
+- **Dans Postman** : Importer `postman/RetrouvID.postman_collection.json` et l'environnement `RetrouvID-local` (ou `RetrouvID-production`), renseigner `adminEmail` et `adminMotDePasse`, puis lancer la collection avec le Runner, dans l'ordre.
+- **En ligne de commande** (API démarrée) :
+
+```powershell
+npx newman run postman/RetrouvID.postman_collection.json -e postman/RetrouvID-local.postman_environment.json --env-var adminEmail=admin@retrouvid.test --env-var adminMotDePasse=Demo12345
+```
+
+La collection a besoin du mode SMS simulé (`SMS_MODE=simulation`) : elle lit le code dans la réponse de l'inscription.
+
+## Déploiement sur Vercel (PWA + API) avec Neon
+
+Un seul projet Vercel sert la PWA et l'API. La racine du projet Vercel est `web/` ; `web/vercel.json` :
+- compile l'API (`api/`), applique les migrations sur la base, puis construit la PWA ;
+- envoie `/api/*` vers la fonction `web/api/index.js`, qui fait tourner l'API NestJS (`api/src/serverless.ts`) ;
+- renvoie les autres adresses vers `index.html` (application monopage).
+
+Mise en place (une fois) :
+1. Sur vercel.com : **Add New → Project**, importer le dépôt GitHub, **Root Directory = `web`**.
+2. Onglet **Storage** du projet : créer une base **Neon** (Postgres) et la relier au projet ; Vercel ajoute `DATABASE_URL`.
+3. **Settings → Environment Variables** : `JWT_SECRET` (longue valeur aléatoire), `PG_POOL_MAX=3`, `CORS_ORIGIN`, `APP_URL`, `VITE_SITE_URL` (l'adresse https du site), `API_PUBLIC_URL` (la même suivie de `/api`), et si besoin `SMS_MODE`, `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`, les clés `PAYDUNYA_*`.
+4. Redéployer. Chaque push sur `main` redéploie ensuite le site.
+5. Créer le premier administrateur (les comptes de démonstration, au mot de passe public, ne doivent pas être créés en production). Dans PowerShell, avec l'adresse de la base Neon (onglet Storage, « .env.local ») :
+
+```powershell
+cd api
+$env:DATABASE_URL = '<adresse Neon>'; $env:ADMIN_EMAIL = '<votre e-mail>'; $env:ADMIN_MOT_DE_PASSE = '<12 caractères ou plus>'
+npm run creer-admin
+```
+
 ## Sauvegarde et restauration
 
 ```bash
