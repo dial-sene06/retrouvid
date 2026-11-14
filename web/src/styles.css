@@ -12,7 +12,10 @@
   --cni:#2a5db0; --permis:#b9770e; --passeport:#0b7a4b;
   --ok:#1d7a4c; --ok-soft:#dcf0e2; --warn:#8a5a0f; --warn-soft:#f8ecd2; --err:#b3352a; --err-soft:#f9e2dd;
   --ombre-1:none; --ombre:none; --ombre-3:0 30px 60px -34px rgba(8,40,24,.35);
-  --f-d:'Outfit',system-ui,sans-serif; --f-b:'DM Sans',system-ui,sans-serif;
+  --f-d:'Manrope Variable',system-ui,-apple-system,'Segoe UI',sans-serif; --f-b:'Manrope Variable',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --f-mono:'IBM Plex Mono',ui-monospace,Consolas,monospace; --f-main:'Caveat Variable','Segoe Print',cursive;
+  --glisse:cubic-bezier(.2,.7,.2,1);
+  --ressort:linear(0 0%,.426 5%,.747 10%,.943 15%,1.038 20%,1.066 25%,1.061 30%,1.0245 40%,1.002 50%,.997 60%,1 80%,1 100%);
   --r-1:12px; --r-2:18px; --r-3:28px; --r-4:40px;
   --d1:120ms; --d2:220ms; --d3:420ms; --d4:700ms;
   --e-out:cubic-bezier(.22,1,.36,1); --e-in:cubic-bezier(.4,0,1,1); --e-rebond:cubic-bezier(.34,1.56,.64,1);
@@ -607,10 +610,13 @@ th{font-family:var(--f-b);font-size:11.5px;color:var(--muted);text-transform:upp
    Pages publiques, inspiration « atelier » : grands titres en capitales serrées, étiquettes inclinées à ombre portée,
    scène d'accueil en panneau arrondi, documents qui flottent, tuiles d'icônes colorées, bandeaux croisés, bulles de dialogue
    ===================================================================================================================== */
-/* Bricolage Grotesque (variable, axe de largeur), sous-ensemble latin servi par le site et préchargé par index.html :
-   les grands titres des pages publiques s'affichent dans leur police dès le premier rendu */
-@font-face{font-family:'Bricolage Grotesque Variable';font-style:normal;font-display:swap;font-weight:200 800;font-stretch:75% 100%;src:url(/fonts/bricolage-latin.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-:root{--f-x:'Bricolage Grotesque Variable','Outfit',system-ui,sans-serif;--menthe:#a8f0c6;--sable:#f5c754;--ciel:#9fd3ff;--ombre-dure:rgba(8,40,24,.22)}
+/* Manrope (variable, préchargée par index.html) pour les titres et le texte, IBM Plex Mono pour les petites étiquettes, Caveat pour les notes manuscrites :
+   polices servies par le site (sous-ensemble latin), sans appel à Google Fonts */
+@font-face{font-family:'Manrope Variable';font-style:normal;font-display:swap;font-weight:200 800;src:url(/fonts/manrope-latin.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-display:swap;font-weight:400;src:url(/fonts/plex-mono-latin-400.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'IBM Plex Mono';font-style:normal;font-display:swap;font-weight:500;src:url(/fonts/plex-mono-latin-500.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+@font-face{font-family:'Caveat Variable';font-style:normal;font-display:swap;font-weight:400 700;src:url(/fonts/caveat-latin.woff2) format('woff2-variations');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+:root{--f-x:'Manrope Variable',system-ui,-apple-system,'Segoe UI',sans-serif;--menthe:#a8f0c6;--sable:#f5c754;--ciel:#9fd3ff;--ombre-dure:rgba(8,40,24,.22)}
 .titre-fort{font-family:var(--f-x);font-weight:800;font-stretch:88%;text-transform:uppercase;letter-spacing:-.025em;line-height:.95;text-wrap:balance}
 .auth :is(h1,h2).titre-fort{font-weight:800;letter-spacing:-.025em;line-height:.95}
 .titre-fort .mot,.titre-fort .etiquette{display:inline-block;animation:mot-monte .8s var(--e-out) both;animation-delay:calc(var(--i,0)*70ms + 60ms)}
@@ -890,3 +896,90 @@ th{font-family:var(--f-x);font-weight:700;font-stretch:92%;letter-spacing:.06em;
 .doc i{border-radius:5px;box-shadow:0 3px 0 var(--ombre-dure);rotate:-4deg}
 
 @media (prefers-reduced-motion:reduce){.cadre-points li{animation:none}}
+
+/* =====================================================================================================================
+   Écriture et mouvement : titres Manrope très gras à l'approche serrée, en casse normale ; petites étiquettes en
+   IBM Plex Mono capitales ; notes manuscrites en Caveat ; mots qui sortent d'un masque ; révélations à ressort.
+   ===================================================================================================================== */
+body{font-family:var(--f-b);font-feature-settings:"ss01","cv11"}
+p,li,dd{text-wrap:pretty}
+h1,h2,h3{font-family:var(--f-x);font-weight:800;letter-spacing:-.035em}
+
+/* grands titres */
+.titre-fort,.auth :is(h1,h2).titre-fort,.app main h1,.legal h1,.auth-carte h1{font-family:var(--f-x);font-weight:800;font-stretch:normal;text-transform:none;letter-spacing:-.045em;line-height:.98}
+.titre-section,.app .carte h2,.carte-tete h2,.atout h3,.service h3{font-weight:800;font-stretch:normal;text-transform:none;letter-spacing:-.035em;line-height:1.08}
+.titre-fort .etiquette{letter-spacing:-.04em}
+.lateral .logo,.logo-mobile{font-stretch:normal;text-transform:none;letter-spacing:-.055em}
+.pied-geant span{font-stretch:normal;text-transform:none;letter-spacing:-.065em}
+.bande span,.pied-piste span{font-stretch:normal;font-weight:800;text-transform:none;letter-spacing:-.04em}
+.kpi-n,.chiffre,.immersif-num,.tache-n,.anneau-n{font-family:var(--f-x);font-stretch:normal;font-weight:800;letter-spacing:-.05em}
+.doc,.salut,.faq summary{font-stretch:normal;font-weight:700;letter-spacing:-.02em}
+.avatar{letter-spacing:-.03em}
+
+/* texte courant : un peu plus d'air pour les paragraphes d'introduction */
+.scene-intro,.dialogue-texte,.cadre-scene p{letter-spacing:-.005em;line-height:1.6}
+.app main .entete-page p,.legal main>p{max-width:62ch;line-height:1.65}
+
+/* petites étiquettes en machine à écrire */
+.surtitre,.kpi-titre,.pied-colonnes h3,th,.scene-pastille{font-family:var(--f-mono);font-weight:500;font-stretch:normal;text-transform:uppercase;letter-spacing:.14em}
+.surtitre{font-size:11.5px}
+.kpi-titre,th{font-size:11px;letter-spacing:.12em}
+.champ label,.puce,.etapes span,.compare dt,.ou,.choix-theme legend,.salut{font-family:var(--f-mono);font-weight:500;letter-spacing:.1em}
+.champ label,.salut{font-size:11.5px}
+/* liens et commandes : casse normale, comme une phrase */
+.auth-nav a{font-size:14px;font-weight:600;letter-spacing:-.01em;text-transform:none}
+.menu a{font-size:14.5px;font-weight:600;letter-spacing:-.01em;text-transform:none}
+.bas a,.onglets button,.lien-voir,.lien-fleche,.pied-haut,.carte-osm a,.mdp button{font-weight:700;letter-spacing:-.01em;text-transform:none}
+.onglets button,.lien-voir,.carte-osm a{font-size:13.5px}
+.lien-fleche{font-size:14px}
+.auth-nav a.pastille{font-weight:800}
+.doc-num,.sms-simule b,#code{font-family:var(--f-mono);font-weight:500}
+
+/* boutons : texte en casse normale, gras, sans espacement de capitales */
+.btn{font-family:var(--f-b);font-size:15px;font-weight:800;letter-spacing:-.01em;text-transform:none;transition:transform .18s var(--glisse),box-shadow .18s var(--glisse),background-color .18s,color .18s,border-color .18s}
+.btn:active{transform:translateY(2px) scale(.98)}
+
+/* notes manuscrites (page d'accueil) */
+.note{font-family:var(--f-main);font-size:22px;font-weight:600;line-height:1.08}
+.note b{font-family:var(--f-mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;margin-bottom:6px}
+
+/* ---------- mouvement ---------- */
+/* chaque mot sort d'un masque, l'un après l'autre */
+.titre-fort .mot{display:inline-block;vertical-align:top;overflow:hidden;padding:.1em .03em .16em;margin:-.1em -.03em -.16em;animation:none}
+.titre-fort .mot>span{display:inline-block;animation:mot-masque .9s var(--glisse) both;animation-delay:calc(.12s + var(--i,0)*70ms)}
+.titre-fort .etiquette{animation-delay:calc(.2s + var(--i,0)*70ms)}
+@keyframes mot-masque{from{transform:translateY(112%)}to{transform:none}}
+/* le titre d'accueil reste en partie visible dès la première image (LCP) */
+h1.titre-fort .mot>span{animation-name:mot-masque-court}
+@keyframes mot-masque-court{from{transform:translateY(58%)}to{transform:none}}
+:is(.revele,.pied-site):not(.vu) .titre-fort .mot>span{animation-play-state:paused}
+
+/* les blocs qui se révèlent montent avec un léger ressort */
+.revele{transform:translateY(24px);transition:opacity .6s var(--glisse) var(--d,0s),transform .9s var(--ressort) var(--d,0s)}
+.revele.vu{transform:none}
+.accueil-suite .revele.vu .grille>*,.accueil-suite .revele.vu .parcours>li,.accueil-suite .revele.vu .recents li,.accueil-suite .chiffres.vu>div{animation:monte-ressort .9s var(--ressort) both;animation-delay:calc(var(--i,0)*70ms + 80ms)}
+@keyframes monte-ressort{from{opacity:0;transform:translateY(26px)}60%{opacity:1}to{opacity:1;transform:none}}
+.atout{transition:opacity .6s var(--glisse),transform .9s var(--ressort)}
+.note{transition:opacity .6s var(--glisse),transform .9s var(--ressort)}
+
+/* l'accroche et les boutons d'accueil suivent le titre */
+.scene-intro{animation:texte-monte .9s var(--glisse) both .4s}
+.scene-actions{animation:texte-monte .9s var(--glisse) both .55s}
+.scene-pastille{animation:texte-monte .9s var(--glisse) both .1s}
+@keyframes texte-monte{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
+
+/* entrée des pages de l'application (les blocs arrivent déjà l'un après l'autre via « .vue ») : le titre se met au point */
+.app main h1{animation:titre-net .6s var(--glisse) backwards .05s}
+@keyframes titre-net{from{opacity:0;filter:blur(4px);translate:0 6px}}
+
+/* petits gestes : la cloche sonne, les liens du pied se soulignent en se traçant */
+.cloche:hover svg{animation:cloche-sonne .6s var(--glisse)}
+@keyframes cloche-sonne{20%{rotate:14deg}45%{rotate:-11deg}70%{rotate:6deg}100%{rotate:0deg}}
+.pied-colonnes a{text-decoration:none;background:linear-gradient(currentColor,currentColor) 0 100%/0 1.5px no-repeat;transition:background-size .35s var(--glisse),color .2s}
+.pied-colonnes a:hover,.pied-colonnes a:focus-visible{background-size:100% 1.5px}
+
+@media (prefers-reduced-motion:reduce){
+  .titre-fort .mot>span,.scene-intro,.scene-actions,.scene-pastille,.app main h1,.cloche:hover svg{animation:none}
+  .revele,.atout,.note,.btn{transition:none}
+  .revele{transform:none}
+}

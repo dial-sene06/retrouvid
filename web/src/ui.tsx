@@ -229,7 +229,7 @@ export function Titre({ niveau = 2, texte, etiquette, ton = 'menthe', id, classN
   const mots = texte.split(' ');
   return (
     <H id={id} className={`titre-fort ${className}`.trim()}>
-      {mots.map((m, i) => <Fragment key={i}><span className="mot" style={{ '--i': i } as CSSProperties}>{m}</span>{' '}</Fragment>)}
+      {mots.map((m, i) => <Fragment key={i}><span className="mot"><span style={{ '--i': i } as CSSProperties}>{m}</span></span>{' '}</Fragment>)}
       {etiquette && <span className="etiquette" data-ton={ton} style={{ '--i': mots.length } as CSSProperties}>{etiquette}</span>}
     </H>
   );
