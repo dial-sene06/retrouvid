@@ -90,13 +90,55 @@ function BandesCroisees() {
   );
 }
 
-/** Mini-documents qui flottent autour du titre d'accueil (valeurs fictives et masquées). */
+/** Drapeau du Sénégal (vert, or, rouge, étoile verte). */
+const Drapeau = () => (
+  <svg className="doc-drapeau" viewBox="0 0 30 20" aria-hidden="true">
+    <rect width="10" height="20" fill="#00853f" /><rect x="10" width="10" height="20" fill="#fdef42" /><rect x="20" width="10" height="20" fill="#e31b23" />
+    <polygon fill="#00853f" points="15,5.6 16.1,8.9 19.5,8.9 16.7,10.9 17.8,14.2 15,12.2 12.2,14.2 13.3,10.9 10.5,8.9 13.9,8.9" />
+  </svg>
+);
+/** Silhouette de la photo d'identité (aucune vraie personne). */
+const Portrait = ({ className = 'doc-photo' }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 30 38" aria-hidden="true">
+    <rect width="30" height="38" rx="2" fill="currentColor" opacity=".16" />
+    <circle cx="15" cy="14" r="6.4" fill="currentColor" opacity=".55" /><path d="M3 38c1-8 6-12 12-12s11 4 12 12z" fill="currentColor" opacity=".55" />
+  </svg>
+);
+
+/**
+ * Pièces qui flottent autour du titre d'accueil : carte d'identité CEDEAO, permis de conduire en carte et passeport
+ * sénégalais, dessinés d'après leur mise en page générale. Données fictives, numéros masqués, mention « Spécimen ».
+ */
 function Ambiance() {
   return (
     <div className="scene-ambiance" aria-hidden="true">
-      <div className="doc-flottant doc-cni"><span className="doc-type">Carte d'identité</span><span className="doc-puce" /><span className="doc-num">1 75 •••• •• 4821</span><span className="doc-lignes"><i /><i /></span></div>
-      <div className="doc-flottant doc-permis"><span className="doc-type">Permis de conduire</span><span className="doc-puce" /><span className="doc-num">SN-••••-307</span><span className="doc-lignes"><i /><i /></span></div>
-      <div className="doc-flottant doc-passeport"><span className="doc-type">Passeport</span><span className="doc-embleme" /><span className="doc-num">A•••••19</span></div>
+      <div className="doc-flottant doc-cni">
+        <div className="doc-tete"><span className="doc-cedeao">CEDEAO</span><span className="doc-intitule"><b>République du Sénégal</b>Carte d'identité CEDEAO</span><Drapeau /></div>
+        <div className="doc-corps">
+          <Portrait />
+          <dl className="doc-champs"><dt>Nom</dt><dd>SPÉCIMEN</dd><dt>Prénoms</dt><dd>Awa</dd><dt>Né(e) le</dt><dd>•• / •• / 19••</dd></dl>
+          <Portrait className="doc-fantome" />
+        </div>
+        <div className="doc-pied"><span className="doc-num">1 75 •••• •• 4821</span><span className="doc-puce" /></div>
+      </div>
+      <div className="doc-flottant doc-permis">
+        <div className="doc-tete"><Drapeau /><span className="doc-intitule"><b>République du Sénégal</b>Permis de conduire</span><span className="doc-sn">SN</span></div>
+        <div className="doc-corps">
+          <Portrait />
+          <dl className="doc-champs"><dt>Nom</dt><dd>SPÉCIMEN</dd><dt>Catégories</dt><dd>B · A1</dd><dt>Groupe sanguin</dt><dd>O+</dd></dl>
+        </div>
+        <div className="doc-pied"><span className="doc-num">SN-••••-307</span><span className="doc-categ">B</span></div>
+      </div>
+      <div className="doc-flottant doc-passeport">
+        <span className="doc-pp-haut">Communauté économique des États de l'Afrique de l'Ouest</span>
+        <span className="doc-pp-pays">République du Sénégal</span>
+        <svg className="doc-embleme" viewBox="0 0 40 40" aria-hidden="true">
+          <circle cx="20" cy="20" r="18" fill="none" stroke="currentColor" strokeWidth="1.4" /><circle cx="20" cy="20" r="14" fill="none" stroke="currentColor" strokeWidth=".7" strokeDasharray="1.4 1.6" />
+          <polygon fill="currentColor" points="20,9 22.6,16.6 30.5,16.6 24.1,21.3 26.5,28.9 20,24.2 13.5,28.9 15.9,21.3 9.5,16.6 17.4,16.6" />
+        </svg>
+        <span className="doc-pp-titre">Passeport<small>Passport</small></span>
+        <svg className="doc-bio" viewBox="0 0 24 16" aria-hidden="true"><rect x="1" y="1" width="22" height="14" rx="1.5" fill="none" stroke="currentColor" strokeWidth="1.3" /><circle cx="12" cy="8" r="3.4" fill="none" stroke="currentColor" strokeWidth="1.3" /><path d="M1 8h7.6M15.4 8H23" stroke="currentColor" strokeWidth="1.3" /></svg>
+      </div>
       <div className="statut-flottant"><span className="statut-ic"><Icone nom="check" taille={16} /></span><span><b>Correspondance vérifiée</b><small>par un agent</small></span></div>
     </div>
   );
