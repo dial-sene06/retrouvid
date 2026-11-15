@@ -55,6 +55,24 @@ export class CorrespondancesController {
   }
 
   /** La photo montre le document en clair : seul l'agent chargé de la vérification la voit, et chaque ouverture est journalisée. */
+  /**
+   * Vue d'ensemble pour l'agent : toutes les pertes déclarées et tous les documents trouvés encore ouverts,
+   * y compris ceux qui n'ont aucune correspondance. Numéro et nom restent masqués, aucune coordonnée n'est donnée.
+   */
+  @Get('agent/dossiers') @Roles('agent')
+  async dossiersAgent() {
+    const [pertes, trouves] = await Promise.all([
+      this.db.query(`SELECT d.id, d.type_document, d.numero, d.nom_proprietaire AS nom, d.lieu_perte AS lieu, d.date_perte AS date, d.etat, d.cree_le,
+          (SELECT count(*) FROM correspondances c WHERE c.declaration_id = d.id AND c.etat <> 'ecartee')::int AS correspondances
+        FROM declarations d WHERE d.etat <> 'cloture' ORDER BY d.cree_le DESC LIMIT 100`),
+      this.db.query(`SELECT s.id, s.type_document, s.numero, s.nom_sur_document AS nom, s.lieu_trouve AS lieu, s.date_trouve AS date, s.etat, s.cree_le,
+          (SELECT count(*) FROM correspondances c WHERE c.signalement_id = s.id AND c.etat <> 'ecartee')::int AS correspondances
+        FROM signalements s WHERE s.etat <> 'cloture' ORDER BY s.cree_le DESC LIMIT 100`),
+    ]);
+    const masquer = (r: any) => ({ ...r, numero: masquerNumero(r.numero), nom: masquerNom(r.nom) });
+    return { pertes: pertes.map(masquer), trouves: trouves.map(masquer) };
+  }
+
   @Get('agent/correspondances/:id/photo') @Roles('agent')
   async photoAgent(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const c = await this.charger(id);

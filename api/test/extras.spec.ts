@@ -123,6 +123,25 @@ describe('corriger et supprimer ses dossiers', () => {
     expect((await b.pool.query("SELECT 1 FROM signalements WHERE numero = 'PHO000444'")).rowCount).toBe(0);
   });
 
+  it("l'agent voit toutes les déclarations ouvertes, même sans correspondance, avec numéro et nom masqués", async () => {
+    const p = await inscrire(b, 'vue.p@test.sn'), f = await inscrire(b, 'vue.f@test.sn');
+    const agent = await compteInterne(b, 'vue.agent@test.sn', 'agent');
+    await b.http().post('/declarations').set(auth(p)).send(D('VUE000777'));
+    await b.http().post('/signalements').set(auth(f)).send(S('VUE000888'));
+    const r = await b.http().get('/agent/dossiers').set(auth(agent));
+    expect(r.status).toBe(200);
+    const perte = r.body.pertes.find((x: any) => x.numero.endsWith('777'));
+    const trouve = r.body.trouves.find((x: any) => x.numero.endsWith('888'));
+    expect(perte).toBeDefined();
+    expect(trouve).toBeDefined();
+    expect(perte.numero).not.toContain('VUE');
+    expect(perte.nom).toMatch(/\*/);
+    expect(typeof perte.correspondances).toBe('number');
+    expect(JSON.stringify(r.body)).not.toMatch(/telephone|email|compte_id/);
+    // réservé aux agents
+    expect((await b.http().get('/agent/dossiers').set(auth(p))).status).toBe(403);
+  });
+
   it("la photo est montrée au propriétaire après l'agent, puis supprimée à sa confirmation", async () => {
     const p = await inscrire(b, 'pho.p@test.sn'), f = await inscrire(b, 'pho.f@test.sn'), autre = await inscrire(b, 'pho.x@test.sn');
     const agent = await compteInterne(b, 'pho.agent@test.sn', 'agent');

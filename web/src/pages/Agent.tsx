@@ -1,6 +1,28 @@
 import { useCallback, useEffect, useState } from 'react';
 import { api, fdate } from '../api';
 import { Action, Alerte, Doc, Icone, PhotoVue, Puce, Stat, Vide } from '../ui';
+
+const ETATS: Record<string, string> = { en_attente: 'Sans correspondance', en_verification: 'Correspondance en cours', remis: 'Remis' };
+
+/** Liste de toutes les pertes ou de tous les documents trouvés, valeurs masquées. */
+function ListeDossiers({ titre, l, lieu }: { titre: string; l: any[]; lieu: string }) {
+  return (
+    <section style={{ marginBottom: 24 }}>
+      <h2>{titre} ({l.length})</h2>
+      {l.length === 0 ? <Vide>Aucun dossier ouvert.</Vide> : l.map((d) => (
+        <div className="carte" key={d.id}>
+          <div className="ligne espace"><Doc type={d.type_document} /><Puce ton={d.etat === 'en_attente' ? 'warn' : 'ok'}>{ETATS[d.etat] ?? d.etat}</Puce></div>
+          <dl style={{ margin: '10px 0 0' }}>
+            <div><dt>Numéro</dt><dd>{d.numero}</dd></div>
+            <div><dt>Nom</dt><dd>{d.nom}</dd></div>
+            <div><dt>{lieu}</dt><dd>{d.lieu}, le {fdate(d.date)}</dd></div>
+          </dl>
+          <small className="muted">Enregistré le {new Date(d.cree_le).toLocaleString('fr-FR')}</small>
+        </div>
+      ))}
+    </section>
+  );
+}
 import { CarteOsm, distanceTexte } from '../geo';
 
 const CHAMPS: [string, string][] = [['numero', 'Numéro'], ['nom', 'Nom'], ['date_naissance', 'Naissance'], ['lieu', 'Lieu'], ['date', 'Date']];
@@ -29,11 +51,34 @@ export function Agent() {
     Promise.all([api<any[]>('/agent/correspondances'), api('/agent/stats')]).then(([l, s]) => { setFile(l); setStats(s); setErr(''); }).catch((e) => setErr(e.message));
   }, []);
   useEffect(charger, [charger]);
+  const [vue, setVue] = useState<'file' | 'tous'>('file');
+  const [dossiers, setDossiers] = useState<{ pertes: any[]; trouves: any[] } | null>(null);
+  useEffect(() => { if (vue === 'tous') api<{ pertes: any[]; trouves: any[] }>('/agent/dossiers').then(setDossiers).catch((e) => setErr(e.message)); }, [vue]);
+
+  const onglets = (
+    <div className="onglets" role="group" aria-label="Affichage">
+      <button className={vue === 'file' ? 'actif' : ''} aria-pressed={vue === 'file'} onClick={() => setVue('file')}>À vérifier</button>
+      <button className={vue === 'tous' ? 'actif' : ''} aria-pressed={vue === 'tous'} onClick={() => setVue('tous')}>Toutes les déclarations</button>
+    </div>
+  );
+  if (vue === 'tous') return (
+    <>
+      <h1 className="titre-page">Toutes les déclarations</h1>
+      <p className="muted">Pertes et documents trouvés encore ouverts, valeurs masquées.</p>
+      {onglets}
+      {err && <Alerte>{err}</Alerte>}
+      {dossiers === null ? <p className="muted">Chargement…</p> : <>
+        <ListeDossiers titre="Pertes déclarées" l={dossiers.pertes} lieu="Perdu à" />
+        <ListeDossiers titre="Documents trouvés" l={dossiers.trouves} lieu="Trouvé à" />
+      </>}
+    </>
+  );
 
   return (
     <>
       <h1 className="titre-page">Correspondances à vérifier</h1>
       <p className="muted">Les valeurs sont partiellement masquées. Vous comparez, puis vous validez ou vous écartez.</p>
+      {onglets}
       {stats && (
         <div className="grille-kpi stats-agent">
           <Stat icone="shield" titre="À vérifier" valeur={stats.a_verifier} />
