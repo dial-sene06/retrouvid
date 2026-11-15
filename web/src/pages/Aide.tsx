@@ -4,21 +4,21 @@ import { Alerte, Champ, Icone, useInstall } from '../ui';
 
 const QUESTIONS: [string, string][] = [
   ['Combien ça coûte ?',
-    "Déclarer une perte et signaler un document trouvé sont gratuits. Pour recevoir les coordonnées de la personne qui l'a trouvé, le propriétaire règle 1 000 FCFA par Wave ou Orange Money, sur la page sécurisée de PayDunya. Le paiement n'est demandé qu'après la vérification d'un agent et votre confirmation. Si le paiement échoue, rien n'est débité : vous pouvez réessayer depuis votre dossier."],
+    "Déclarer et signaler sont gratuits. Le propriétaire paie 1 000 FCFA par Wave ou Orange Money pour obtenir le contact, après la vérification."],
   ['Qui voit mes informations ?',
-    "Le numéro et le nom du document restent masqués pour les autres utilisateurs. Un agent les voit partiellement masqués pour comparer. Votre téléphone et votre e-mail ne sont transmis à l'autre personne qu'après validation par un agent, confirmation du propriétaire et paiement."],
+    "Le numéro et le nom restent masqués. Vos coordonnées ne sont transmises qu'à la fin de la vérification."],
   ['Comment fonctionne le rapprochement ?',
-    "Le système compare le numéro, le nom et la date de naissance. Un numéro identique pèse le plus, puis le nom. Au-dessus d'un seuil, la correspondance part dans la file d'un agent. Rien n'est transmis tant qu'il n'a pas validé."],
+    "Le système compare le numéro, le nom et la date de naissance. Un agent valide ensuite."],
   ['À quoi sert ma position GPS ?',
-    "Elle est facultative. Elle aide l'agent à juger si le lieu de perte et le lieu de découverte sont proches (distance à vol d'oiseau, à titre indicatif). Le lieu exact de la découverte n'est montré au propriétaire qu'après validation par un agent. Les coordonnées sont effacées à la clôture du dossier."],
+    "Elle est facultative et aide l'agent à comparer les lieux. Elle est effacée à la clôture."],
   ['Puis-je corriger ou supprimer un dossier ?',
-    "Oui, tant qu'aucun rapprochement n'est en cours. Une déclaration peut être corrigée ou supprimée, un signalement peut être supprimé. Une fois la vérification commencée, seule l'administration peut intervenir."],
+    "Oui, tant qu'aucune vérification n'a commencé."],
   ['Quand puis-je écrire à l\'autre personne ?',
-    "Une fois le paiement effectué. Une discussion s'ouvre alors dans le dossier, pour convenir du lieu et de l'heure de la remise. Les messages sont supprimés à la clôture."],
+    "Après le paiement, une discussion s'ouvre dans le dossier."],
   ['Que devient mon dossier après la remise ?',
-    "Quand les deux parties ont confirmé la remise, un administrateur clôture le dossier. Le numéro, le nom, la photo, les messages et les positions sont alors effacés ou anonymisés."],
+    "Il est clôturé et vos données sont effacées."],
   ["Comment installer l'application ?",
-    "RetrouvID est une application web installable. Depuis Chrome ou Edge, utilisez le bouton « Installer l'application » ou le menu du navigateur. Sur iPhone, ouvrez le menu Partager de Safari puis « Sur l'écran d'accueil »."],
+    "Sur Android, touchez « Installer l'application ». Sur iPhone, menu Partager puis « Sur l'écran d'accueil »."],
 ];
 
 export function Faq() {

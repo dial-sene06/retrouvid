@@ -56,8 +56,8 @@ export function BanniereCookies() {
     <div className="cookies" role="dialog" aria-modal="false" aria-labelledby="cookies-t">
       <h2 id="cookies-t">Votre appareil et vos données</h2>
       <p>
-        RetrouvID garde sur votre appareil le strict nécessaire : votre session de connexion, votre choix de thème et ce choix-ci.
-        {mesure ? ' Avec votre accord, nous comptons aussi les visites des pages publiques (accueil, aide, pages légales), sans lire votre espace connecté.' : ' Aucun outil de mesure ni publicité n\'est installé.'}{' '}
+        Seuls votre session et vos réglages sont gardés ici.
+        {mesure ? ' Avec votre accord, nous comptons les visites des pages publiques.' : ' Aucune publicité.'}{' '}
         <Link to="/confidentialite#stockage">En savoir plus</Link>
       </p>
       <div className="ligne">

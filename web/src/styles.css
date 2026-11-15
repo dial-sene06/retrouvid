@@ -711,7 +711,7 @@ h1.titre-fort .etiquette{animation-name:etiquette-glisse}
 .atout h3{font-family:var(--f-x);font-weight:800;font-stretch:90%;text-transform:uppercase;font-size:clamp(17px,1.5vw,21px);letter-spacing:-.01em;margin:0 0 10px}
 .atout p{color:var(--muted);max-width:32ch;margin:0 auto}
 @media (max-width:900px){.atouts{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media (max-width:560px){.atouts{grid-template-columns:1fr}}
+@media (max-width:560px){.atouts{grid-template-columns:repeat(2,minmax(0,1fr));gap:28px 14px}.atout .tuile{width:52px;height:52px}.atout h3{font-size:15px;margin-bottom:6px}.atout p{font-size:14px;line-height:1.4}}
 
 /* bandeaux croisés qui défilent en sens contraires */
 .bandes{position:relative;height:clamp(180px,22vw,290px);margin:0 calc(-1*clamp(16px,6vw,80px)) clamp(40px,6vw,80px);overflow:hidden;pointer-events:none}

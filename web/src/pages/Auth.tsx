@@ -9,9 +9,9 @@ import { Rubans } from '../rubans';
 const NOMS_DOC: Record<string, string> = { cni: "Carte d'identité", permis: 'Permis de conduire', passeport: 'Passeport' };
 
 const ETAPES_PARCOURS = [
-  { n: '01', titre: 'Vous déclarez la perte', texte: 'Type de document, numéro, lieu et date. Le lieu peut être placé sur une carte si vous le souhaitez.' },
-  { n: '02', titre: 'Un agent vérifie', texte: "Il compare des valeurs partiellement masquées. Rien n'est transmis tant que la correspondance n'est pas validée." },
-  { n: '03', titre: 'Vous récupérez votre pièce', texte: "Vous obtenez les coordonnées de la personne qui l'a trouvée, puis vous confirmez la remise tous les deux." },
+  { n: '01', titre: 'Vous déclarez la perte', texte: 'Type, numéro, lieu et date.' },
+  { n: '02', titre: 'Un agent vérifie', texte: "Rien n'est transmis avant sa validation." },
+  { n: '03', titre: 'Vous récupérez votre pièce', texte: "Vous contactez la personne qui l'a trouvée." },
 ];
 
 /**
@@ -71,12 +71,12 @@ function ParcoursImmersif() {
 
 /** Garanties de la plateforme, affichées en grille avec une tuile d'icône colorée. */
 const ATOUTS = [
-  { icone: 'shield', ton: 'menthe', titre: 'Données masquées', texte: "Le numéro et le nom du document ne sont jamais affichés en clair au public. L'agent ne voit qu'une partie des valeurs." },
-  { icone: 'users', ton: 'sable', titre: 'Un agent vérifie', texte: 'Chaque rapprochement proposé par la plateforme est contrôlé par un agent avant toute mise en relation.' },
-  { icone: 'coin', ton: 'ciel', titre: 'Paiement mobile', texte: 'La mise en relation se règle par Wave ou Orange Money, sans carte bancaire.' },
-  { icone: 'bell', ton: 'ciel', titre: 'Alerte à chaque étape', texte: 'Vous êtes prévenu dès qu’un document correspondant est signalé, validé, puis remis.' },
-  { icone: 'trash', ton: 'menthe', titre: 'Effacé à la clôture', texte: 'Une fois la pièce rendue, le numéro, le nom, la photo, les messages et les positions sont supprimés.' },
-  { icone: 'download', ton: 'sable', titre: 'Installable', texte: "RetrouvID s'ajoute à l'écran d'accueil du téléphone, comme une application, sans passer par un magasin." },
+  { icone: 'shield', ton: 'menthe', titre: 'Données masquées', texte: 'Numéro et nom jamais affichés en clair.' },
+  { icone: 'users', ton: 'sable', titre: 'Un agent vérifie', texte: 'Chaque rapprochement est contrôlé.' },
+  { icone: 'coin', ton: 'ciel', titre: 'Paiement mobile', texte: 'Par Wave ou Orange Money.' },
+  { icone: 'bell', ton: 'ciel', titre: 'Alerte à chaque étape', texte: 'Vous êtes prévenu à chaque avancée.' },
+  { icone: 'trash', ton: 'menthe', titre: 'Effacé à la clôture', texte: 'Vos données sont supprimées après la remise.' },
+  { icone: 'download', ton: 'sable', titre: 'Installable', texte: "S'ajoute à l'écran d'accueil du téléphone." },
 ] as const;
 
 /** Bandeaux inclinés qui se croisent et défilent en sens contraires. */
@@ -160,9 +160,8 @@ export function Accueil() {
       <main id="contenu" className="scene">
         <Ambiance />
         <div className="scene-contenu">
-          <p className="scene-pastille"><span className="point-vivant" />Pièces d'identité perdues · Sénégal</p>
           <Titre niveau={1} texte="Retrouvez votre pièce d'identité" etiquette="en sécurité." />
-          <p className="scene-intro">Déclarez la perte de votre carte d'identité, de votre permis ou de votre passeport. Si quelqu'un l'a trouvé, un agent vérifie la correspondance avant que vous ne receviez ses coordonnées.</p>
+          <p className="scene-intro">Déclarez votre pièce perdue. Si quelqu'un la trouve, un agent vérifie avant de vous mettre en contact.</p>
           <div className="ligne scene-actions">
             <Link className="btn clair p" to="/inscription">Créer un compte</Link>
             <Link className="btn clair s" to="/connexion">Se connecter</Link>
@@ -173,16 +172,16 @@ export function Accueil() {
       <div className="accueil-suite" role="region" aria-label="Présentation du service">
         {stats && (
           <section className="chiffres revele" aria-label="Chiffres de la plateforme">
-            <div><Compteur valeur={stats.declarations} /><p>pertes déclarées par des citoyens sur la plateforme</p></div>
-            <div><Compteur valeur={stats.signalements} /><p>documents trouvés et signalés par des personnes de bonne foi</p></div>
-            <div><Compteur valeur={stats.restitues} /><p>pièces rendues à leur propriétaire après vérification</p></div>
+            <div><Compteur valeur={stats.declarations} /><p>pertes déclarées</p></div>
+            <div><Compteur valeur={stats.signalements} /><p>documents signalés</p></div>
+            <div><Compteur valeur={stats.restitues} /><p>pièces rendues</p></div>
           </section>
         )}
 
         <section className="bloc revele" aria-labelledby="titre-atouts">
           <div className="tete-centre">
             <Titre id="titre-atouts" texte="Pourquoi" etiquette="RetrouvID" ton="sable" />
-            <p>Ce qui protège chaque dossier, de la déclaration à la remise.</p>
+            <p>Simple et sûr.</p>
           </div>
           <div className="atouts">
             {ATOUTS.map((a, i) => (
@@ -202,28 +201,28 @@ export function Accueil() {
         <section className="bloc revele" id="services">
           <div className="tete-centre">
             <Titre texte="Ce que vous pouvez" etiquette="faire" ton="ciel" />
-            <p>Un seul compte sert à déclarer une perte comme à signaler un document trouvé.</p>
+            <p>Un seul compte pour tout.</p>
           </div>
           <div className="grille services">
             <article className="carte service">
               <span className="tuile" data-ton="menthe"><Icone nom="search" taille={22} /></span>
               <span className="surtitre">Perte</span>
               <h3>J'ai perdu un document</h3>
-              <p>Vous décrivez la perte et suivez chaque étape depuis votre espace. Vous êtes prévenu à chaque changement.</p>
+              <p>Déclarez la perte et suivez votre dossier.</p>
               <Link className="lien-fleche" to="/inscription">Déclarer une perte<Icone nom="up" /></Link>
             </article>
             <article className="carte service">
               <span className="tuile" data-ton="sable"><Icone nom="flag" taille={22} /></span>
               <span className="surtitre">Trouvaille</span>
               <h3>J'ai trouvé un document</h3>
-              <p>Vous le signalez avec une photo du document. Votre nom et votre téléphone ne sont transmis qu'après vérification.</p>
+              <p>Signalez-le avec une photo.</p>
               <Link className="lien-fleche" to="/inscription">Signaler un document<Icone nom="up" /></Link>
             </article>
             <article className="carte service">
               <span className="tuile" data-ton="ciel"><Icone nom="shield" taille={22} /></span>
               <span className="surtitre">Vérification</span>
               <h3>Un agent contrôle</h3>
-              <p>Il compare les valeurs masquées, la distance entre les deux lieux et la photo. Il valide ou il écarte. Le propriétaire voit ensuite la photo pour reconnaître sa pièce.</p>
+              <p>Il vérifie avant toute mise en contact.</p>
               <a className="lien-fleche" href="#confidentialite">Nos garanties<Icone nom="up" /></a>
             </article>
           </div>
@@ -231,9 +230,9 @@ export function Accueil() {
 
         <section className="dialogue revele" aria-labelledby="titre-dialogue">
           <p className="note note-g"><b>Vous :</b>J'ai perdu ma carte d'identité dans un taxi. Par où commencer ?</p>
-          <p className="note note-d"><b>RetrouvID :</b>Déclarez la perte une fois. Dès qu'un document correspondant est signalé et vérifié, vous êtes prévenu.</p>
+          <p className="note note-d"><b>RetrouvID :</b>Déclarez-la ici. On vous prévient si elle est retrouvée.</p>
           <Titre id="titre-dialogue" texte="Une perte, une alerte," etiquette="une remise." ton="menthe" />
-          <p className="dialogue-texte">Vous n'avez pas à surveiller les réseaux sociaux : la plateforme compare chaque nouveau signalement à votre déclaration.</p>
+          <p className="dialogue-texte">Plus besoin de surveiller les réseaux sociaux.</p>
           <Link className="btn p" to="/inscription">Déclarer une perte</Link>
         </section>
 
@@ -242,10 +241,10 @@ export function Accueil() {
             <span className="surtitre">Confidentialité</span>
             <Titre texte="Vos données restent" etiquette="protégées" ton="menthe" />
             <ul className="points">
-              <li>Le numéro et le nom du document sont masqués pour tous, sauf à l'agent qui compare, et en partie seulement.</li>
-              <li>Vos coordonnées ne sont transmises qu'après validation de l'agent, confirmation du propriétaire et paiement.</li>
-              <li>La position GPS est facultative et n'est jamais montrée au grand public.</li>
-              <li>À la clôture du dossier, le numéro, le nom, la photo, les messages et les positions sont effacés.</li>
+              <li>Numéro et nom masqués.</li>
+              <li>Coordonnées transmises seulement après vérification.</li>
+              <li>Position GPS facultative.</li>
+              <li>Tout est effacé à la clôture.</li>
             </ul>
           </div>
           <div id="restitues">
@@ -257,7 +256,7 @@ export function Accueil() {
                   <li key={i}><Icone nom="check" /><span><b>{NOMS_DOC[r.type_document] ?? r.type_document}</b> remis à son propriétaire</span><small>{fdate(r.date)}</small></li>
                 ))}
               </ul>
-            ) : <p className="muted">Aucune restitution enregistrée pour l'instant. Les nouvelles apparaîtront ici, sans nom ni numéro.</p>}
+            ) : <p className="muted">Aucune restitution pour l'instant.</p>}
           </div>
         </section>
 
@@ -270,7 +269,7 @@ export function Accueil() {
           <Rubans forme="vague" />
           <div className="bande-texte">
             <Titre texte="Une" etiquette="question ?" ton="sable" />
-            <p>Écrivez-nous. Le message arrive chez l'administrateur de la plateforme, qui vous répond par e-mail.</p>
+            <p>Écrivez-nous, on vous répond par e-mail.</p>
             {(inst.peut || inst.installee) && (
               <p>{inst.peut
                 ? <button className="btn s clair" onClick={inst.installer}><Icone nom="download" />Installer l'application</button>
