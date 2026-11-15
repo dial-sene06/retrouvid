@@ -118,7 +118,9 @@ export function Citoyen({ compte, onChange }: { compte: Compte; onChange: () => 
             <p className="muted" style={{ margin: '6px 0 0' }}>Perdu à {d.lieu_perte}, le {fdate(d.date_perte)}</p>
             {d.etat === 'en_attente' && (
               <div className="ligne" style={{ marginTop: 10 }}>
-                <Link className="btn s" to={`/declarations/${d.id}/modifier`}><Icone nom="edit" />Corriger</Link>
+                {(d.nb_modifications ?? 0) < 2
+                  ? <Link className="btn s" to={`/declarations/${d.id}/modifier`}><Icone nom="edit" />Corriger ({2 - (d.nb_modifications ?? 0)} restante{2 - (d.nb_modifications ?? 0) > 1 ? 's' : ''})</Link>
+                  : <small className="muted">Plus de correction possible</small>}
                 <Action ton="s" confirmer="Supprimer cette déclaration ? Cette action est définitive." onClick={async () => { await api(`/declarations/${d.id}`, { method: 'DELETE' }); charger(); }}><Icone nom="trash" />Supprimer</Action>
               </div>
             )}
@@ -169,6 +171,7 @@ export function NouvelleDeclaration() {
   return (
     <form className="cote carte" onSubmit={envoyer}>
       <h1 className="titre-page">{id ? 'Corriger la déclaration' : 'Déclarer une perte'}</h1>
+      {id && <p className="muted">Une déclaration peut être corrigée deux fois au maximum.</p>}
       <Liste id="type" label="Type de document" value={f.typeDocument} onChange={maj('typeDocument')} options={OPTIONS_DOCS} />
       <Champ id="numero" label="Numéro du document" required value={f.numero} onChange={maj('numero')} aide="S'il vous reste une copie ou une photo. Il reste masqué pour les autres." />
       <Champ id="nom" label="Nom complet sur le document" required value={f.nomProprietaire} onChange={maj('nomProprietaire')} />

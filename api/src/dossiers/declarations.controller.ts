@@ -21,6 +21,9 @@ export function envoyerPhoto(res: Response, p: { type_mime: string; donnees: Buf
   res.set({ 'Content-Type': p.type_mime, 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff' }).end(p.donnees);
 }
 
+/** Nombre de corrections permises par son auteur pour une déclaration de perte ou un signalement. */
+export const MODIFICATIONS_MAX = 2;
+
 @Controller('declarations')
 @Roles('citoyen')
 export class DeclarationsController {
@@ -42,15 +45,17 @@ export class DeclarationsController {
   @Patch(':id') async modifier(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Body() d: DeclarationDto) {
     pasDansLeFutur(d.datePerte, 'La date de perte');
     const p = pos(d);
-    const cur = await this.db.one('SELECT compte_id, etat FROM declarations WHERE id = $1', [id]);
+    const cur = await this.db.one('SELECT compte_id, etat, nb_modifications FROM declarations WHERE id = $1', [id]);
     if (!cur) throw new NotFoundException('Déclaration introuvable');
     if (cur.compte_id !== u.id) throw new ForbiddenException('Accès refusé');
     if (cur.etat !== 'en_attente') throw new BadRequestException('Cette déclaration est déjà en cours de vérification, elle ne peut plus être modifiée');
+    if (cur.nb_modifications >= MODIFICATIONS_MAX) throw new BadRequestException(`Cette déclaration a déjà été modifiée ${MODIFICATIONS_MAX} fois, elle ne peut plus l'être`);
     const decl = await this.db.one(
-      `UPDATE declarations SET type_document=$2, numero=$3, nom_proprietaire=$4, date_naissance=$5, lieu_perte=$6, date_perte=$7, description=$8, lat=$9, lng=$10
-       WHERE id=$1 AND etat='en_attente' RETURNING *`,
-      [id, d.typeDocument, normaliserNumero(d.numero), d.nomProprietaire.trim(), d.dateNaissance ?? null, d.lieuPerte.trim(), d.datePerte, d.description ?? null, p.lat, p.lng]);
-    if (!decl) throw new BadRequestException("Cette déclaration vient d'être rapprochée, elle ne peut plus être modifiée");
+      `UPDATE declarations SET type_document=$2, numero=$3, nom_proprietaire=$4, date_naissance=$5, lieu_perte=$6, date_perte=$7, description=$8, lat=$9, lng=$10,
+         nb_modifications = nb_modifications + 1
+       WHERE id=$1 AND etat='en_attente' AND nb_modifications < $11 RETURNING *`,
+      [id, d.typeDocument, normaliserNumero(d.numero), d.nomProprietaire.trim(), d.dateNaissance ?? null, d.lieuPerte.trim(), d.datePerte, d.description ?? null, p.lat, p.lng, MODIFICATIONS_MAX]);
+    if (!decl) throw new BadRequestException("Cette déclaration ne peut plus être modifiée");
     await this.journal.ajouter(u.id, 'declaration_modifiee', 'declaration', id);
     await this.match.apresDeclaration(decl);
     return this.db.one('SELECT * FROM declarations WHERE id = $1', [id]);
@@ -102,21 +107,23 @@ export class SignalementsController {
     if (d.photo === '') throw new BadRequestException('La photo du document trouvé est obligatoire : elle peut être remplacée, pas retirée');
     const p = pos(d);
     const photo = d.photo ? decoderPhoto(d.photo) : null;
-    const cur = await this.db.one('SELECT compte_id, etat FROM signalements WHERE id = $1', [id]);
+    const cur = await this.db.one('SELECT compte_id, etat, nb_modifications FROM signalements WHERE id = $1', [id]);
     if (!cur) throw new NotFoundException('Signalement introuvable');
     if (cur.compte_id !== u.id) throw new ForbiddenException('Accès refusé');
     if (cur.etat !== 'en_attente') throw new BadRequestException('Ce signalement est déjà en cours de vérification, il ne peut plus être modifié');
+    if (cur.nb_modifications >= MODIFICATIONS_MAX) throw new BadRequestException(`Ce signalement a déjà été modifié ${MODIFICATIONS_MAX} fois, il ne peut plus l'être`);
     const sig = await this.db.tx(async (t) => {
       const r = await t.query(
-        `UPDATE signalements SET type_document=$2, numero=$3, nom_sur_document=$4, date_naissance=$5, lieu_trouve=$6, date_trouve=$7, description=$8, lat=$9, lng=$10
-         WHERE id=$1 AND etat='en_attente' RETURNING *`,
-        [id, d.typeDocument, normaliserNumero(d.numero), d.nomSurDocument.trim(), d.dateNaissance ?? null, d.lieuTrouve.trim(), d.dateTrouve, d.description ?? null, p.lat, p.lng]);
+        `UPDATE signalements SET type_document=$2, numero=$3, nom_sur_document=$4, date_naissance=$5, lieu_trouve=$6, date_trouve=$7, description=$8, lat=$9, lng=$10,
+           nb_modifications = nb_modifications + 1
+         WHERE id=$1 AND etat='en_attente' AND nb_modifications < $11 RETURNING *`,
+        [id, d.typeDocument, normaliserNumero(d.numero), d.nomSurDocument.trim(), d.dateNaissance ?? null, d.lieuTrouve.trim(), d.dateTrouve, d.description ?? null, p.lat, p.lng, MODIFICATIONS_MAX]);
       if (!r.rows[0]) return null;
       if (photo) await t.query(`INSERT INTO signalement_photos (signalement_id, type_mime, donnees) VALUES ($1,$2,$3)
         ON CONFLICT (signalement_id) DO UPDATE SET type_mime = EXCLUDED.type_mime, donnees = EXCLUDED.donnees, cree_le = now()`, [id, photo.mime, photo.donnees]);
       return r.rows[0];
     });
-    if (!sig) throw new BadRequestException("Ce signalement vient d'être rapproché, il ne peut plus être modifié");
+    if (!sig) throw new BadRequestException('Ce signalement ne peut plus être modifié');
     await this.journal.ajouter(u.id, 'signalement_modifie', 'signalement', id);
     await this.match.apresSignalement(sig);
     return { id, etat: sig.etat };
@@ -139,7 +146,7 @@ export class SignalementsController {
   /** Le découvreur ne revoit jamais les données personnelles du document : numéro et nom restent masqués. */
   @Get() liste(@CurrentUser() u: Utilisateur) {
     return this.db.query(
-      `SELECT id, type_document, lieu_trouve, date_trouve, lat, lng, etat, cree_le,
+      `SELECT id, type_document, lieu_trouve, date_trouve, lat, lng, etat, cree_le, nb_modifications,
               EXISTS(SELECT 1 FROM signalement_photos p WHERE p.signalement_id = signalements.id) AS a_photo
        FROM signalements WHERE compte_id = $1 ORDER BY cree_le DESC`, [u.id]);
   }

@@ -123,6 +123,23 @@ describe('corriger et supprimer ses dossiers', () => {
     expect((await b.pool.query("SELECT 1 FROM signalements WHERE numero = 'PHO000444'")).rowCount).toBe(0);
   });
 
+  it('une déclaration et un signalement se corrigent deux fois au maximum', async () => {
+    const p = await inscrire(b, 'max.p@test.sn'), f = await inscrire(b, 'max.f@test.sn');
+    const d = (await b.http().post('/declarations').set(auth(p)).send(D('MAX000111', { nomProprietaire: 'Aminata Ba' }))).body;
+    const s = (await b.http().post('/signalements').set(auth(f)).send(S('MAX000222', { nomSurDocument: 'Ousmane Fall' }))).body;
+    for (let i = 1; i <= 2; i++) {
+      expect((await b.http().patch(`/declarations/${d.id}`).set(auth(p)).send(D('MAX000111', { nomProprietaire: 'Aminata Ba', lieuPerte: `Lieu ${i}` }))).status).toBe(200);
+      expect((await b.http().patch(`/signalements/${s.id}`).set(auth(f)).send(S('MAX000222', { nomSurDocument: 'Ousmane Fall', lieuTrouve: `Lieu ${i}`, photo: undefined }))).status).toBe(200);
+    }
+    const r3 = await b.http().patch(`/declarations/${d.id}`).set(auth(p)).send(D('MAX000111', { nomProprietaire: 'Aminata Ba', lieuPerte: 'Lieu 3' }));
+    expect(r3.status).toBe(400);
+    expect(r3.body.message).toMatch(/2 fois/);
+    expect((await b.http().patch(`/signalements/${s.id}`).set(auth(f)).send(S('MAX000222', { nomSurDocument: 'Ousmane Fall', lieuTrouve: 'Lieu 3', photo: undefined }))).status).toBe(400);
+    const l = (await b.http().get('/declarations').set(auth(p))).body.find((x: any) => x.id === d.id);
+    expect(l.nb_modifications).toBe(2);
+    expect(l.lieu_perte).toBe('Lieu 2');
+  });
+
   it("l'agent voit toutes les déclarations ouvertes, même sans correspondance, avec numéro et nom masqués", async () => {
     const p = await inscrire(b, 'vue.p@test.sn'), f = await inscrire(b, 'vue.f@test.sn');
     const agent = await compteInterne(b, 'vue.agent@test.sn', 'agent');
