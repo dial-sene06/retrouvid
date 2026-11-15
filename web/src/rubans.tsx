@@ -63,33 +63,50 @@ export function Rubans({ forme = 'croix', className = '' }: { forme?: Forme; cla
 
   useEffect(() => {
     const c = ref.current;
-    const ctx = c?.getContext('2d');
-    if (!c || !ctx) return;
+    if (!c) return;
     const calme = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
     const debut = performance.now();
-    let w = 0, h = 0, id = 0, visible = false;
+    // Le canvas n'est créé, dimensionné et dessiné qu'une fois la page chargée et le canvas proche de l'écran.
+    // Le dessiner dès l'ouverture de la page, hors de la vue, coûtait une longue tâche graphique au chargement
+    // (mesurée par Lighthouse sur mobile).
+    let ctx: CanvasRenderingContext2D | null = null;
+    let w = 0, h = 0, id = 0, visible = false, aRefaire = true;
 
     const instant = () => (calme ? 2 : (performance.now() - debut) / 1000);
     const redimensionner = () => {
+      if (!visible) { aRefaire = true; return; }
+      ctx ??= c.getContext('2d');
+      if (!ctx) return;
+      aRefaire = false;
       const r = c.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = r.width; h = r.height;
       c.width = Math.max(1, Math.round(w * dpr)); c.height = Math.max(1, Math.round(h * dpr));
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       dessiner(ctx, w, h, instant(), forme);
     };
-    const boucle = () => { dessiner(ctx, w, h, instant(), forme); id = requestAnimationFrame(boucle); };
-    const lancer = () => { if (!id && visible && !document.hidden && !calme) id = requestAnimationFrame(boucle); };
+    const boucle = () => { if (ctx) dessiner(ctx, w, h, instant(), forme); id = requestAnimationFrame(boucle); };
+    const lancer = () => { if (!id && visible && ctx && !document.hidden && !calme) id = requestAnimationFrame(boucle); };
     const arreter = () => { cancelAnimationFrame(id); id = 0; };
 
     const taille = new ResizeObserver(redimensionner);
-    taille.observe(c);
-    const vue = new IntersectionObserver(([e]) => { visible = e.isIntersecting; if (visible) lancer(); else arreter(); });
-    vue.observe(c);
+    const vue = new IntersectionObserver(([e]) => {
+      visible = e.isIntersecting;
+      // le décor voisin (brume du panneau) ne s'anime lui aussi que pendant que les rubans sont visibles
+      c.parentElement?.toggleAttribute('data-vivant', visible);
+      if (visible) { if (aRefaire) redimensionner(); lancer(); } else arreter();
+    }, { rootMargin: '200px 0px' });
     const onglet = () => (document.hidden ? arreter() : lancer());
     document.addEventListener('visibilitychange', onglet);
-    redimensionner();
 
-    return () => { arreter(); taille.disconnect(); vue.disconnect(); document.removeEventListener('visibilitychange', onglet); };
+    // l'observation commence après le chargement, quand la mise en page est stable
+    let attente = 0;
+    const demarrer = () => { attente = window.setTimeout(() => { taille.observe(c); vue.observe(c); }, 300); };
+    if (document.readyState === 'complete') demarrer(); else window.addEventListener('load', demarrer, { once: true });
+
+    return () => {
+      window.removeEventListener('load', demarrer); clearTimeout(attente);
+      arreter(); taille.disconnect(); vue.disconnect(); document.removeEventListener('visibilitychange', onglet);
+    };
   }, [forme]);
 
   return <canvas ref={ref} className={`rubans ${className}`.trim()} aria-hidden="true" />;

@@ -1057,3 +1057,12 @@ h1.titre-fort .mot>span{animation-name:mot-masque-court}
 /* ---------- « Comment ça marche » : bord à bord, sans arrondi ---------- */
 .immersif{margin-inline:calc(-1 * clamp(16px,6vw,80px))}
 .immersif-colle{border-radius:0}
+
+/* la brume du panneau « Comment ça marche » ne s'anime que quand le panneau est à l'écran (attribut posé par les rubans) */
+.immersif-colle:not([data-vivant])::after{animation-play-state:paused}
+/* sections hors de l'écran : le navigateur ne les met en page qu'à l'approche (temps de blocage au chargement sur mobile) */
+.auth-accueil :is(.bandes,.immersif,.dialogue),.pied-zone{content-visibility:auto}
+.auth-accueil .bandes{contain-intrinsic-size:auto 230px}
+.auth-accueil .immersif{contain-intrinsic-size:auto 300vh}
+.auth-accueil .dialogue{contain-intrinsic-size:auto 760px}
+.pied-zone{contain-intrinsic-size:auto 900px}
