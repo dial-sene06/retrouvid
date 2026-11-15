@@ -104,7 +104,7 @@ describe('corriger et supprimer ses dossiers', () => {
     expect((await b.http().delete(`/declarations/${d.body.id}`).set(auth(c))).status).toBe(400);
   });
 
-  it("la photo d'un signalement est conservée si absente, retirée si chaîne vide", async () => {
+  it("la photo d'un signalement est obligatoire, conservée si absente, jamais retirée", async () => {
     const f = await inscrire(b, 'cor.photo@test.sn');
     const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
     const s = await b.http().post('/signalements').set(auth(f)).send(S('PHO000333', { photo: png }));
@@ -114,8 +114,49 @@ describe('corriger et supprimer ses dossiers', () => {
     expect(await nb()).toBe(1);
     await b.http().patch(`/signalements/${id}`).set(auth(f)).send(S('PHO000333'));
     expect(await nb()).toBe(1);
-    await b.http().patch(`/signalements/${id}`).set(auth(f)).send(S('PHO000333', { photo: '' }));
-    expect(await nb()).toBe(0);
+    expect((await b.http().patch(`/signalements/${id}`).set(auth(f)).send(S('PHO000333', { photo: '' }))).status).toBe(400);
+    expect(await nb()).toBe(1);
+    // sans photo, le signalement est refusé et rien n'est enregistré
+    const sans = await b.http().post('/signalements').set(auth(f)).send(S('PHO000444', { photo: undefined }));
+    expect(sans.status).toBe(400);
+    expect(sans.body.message).toMatch(/photo/i);
+    expect((await b.pool.query("SELECT 1 FROM signalements WHERE numero = 'PHO000444'")).rowCount).toBe(0);
+  });
+
+  it("la photo est montrée au propriétaire après l'agent, puis supprimée à sa confirmation", async () => {
+    const p = await inscrire(b, 'pho.p@test.sn'), f = await inscrire(b, 'pho.f@test.sn'), autre = await inscrire(b, 'pho.x@test.sn');
+    const agent = await compteInterne(b, 'pho.agent@test.sn', 'agent');
+    await b.http().post('/declarations').set(auth(p)).send(D('PHO000555'));
+    const s = (await b.http().post('/signalements').set(auth(f)).send(S('PHO000555'))).body;
+    // la déclaration peut aussi avoir été rapprochée d'un signalement d'un autre test : on vise celle de ce signalement
+    const id = (await b.pool.query('SELECT id FROM correspondances WHERE signalement_id = $1', [s.id])).rows[0].id;
+    const voir = (t: string) => b.http().get(`/correspondances/${id}/photo`).set(auth(t));
+
+    // avant l'agent : ni le propriétaire ni personne d'autre
+    expect((await voir(p)).status).toBe(400);
+    await b.http().get(`/agent/correspondances/${id}/photo`).set(auth(agent)).expect(200);
+    await b.http().post(`/agent/correspondances/${id}/valider`).set(auth(agent)).expect(201);
+
+    // après l'agent : le propriétaire voit la photo, le découvreur et un tiers non
+    const vue = (await b.http().get('/correspondances').set(auth(p))).body.find((c: any) => c.id === id);
+    expect(vue.photo_disponible).toBe(true);
+    const r = await voir(p);
+    expect(r.status).toBe(200);
+    expect(r.headers['content-type']).toMatch(/image\/png/);
+    expect((await voir(f)).status).toBe(403);
+    expect((await voir(autre)).status).toBe(403);
+
+    // la confirmation du propriétaire supprime la photo
+    const v = await b.http().post(`/correspondances/${id}/valider`).set(auth(p));
+    expect(v.status).toBe(201);
+    expect(v.body.photo_supprimee).toBe(true);
+    expect((await b.pool.query('SELECT 1 FROM signalement_photos WHERE signalement_id = $1', [s.id])).rowCount).toBe(0);
+    expect((await voir(p)).status).toBe(400);
+    await b.http().get(`/signalements/${s.id}/photo`).set(auth(f)).expect(404);
+    const j = await b.pool.query("SELECT 1 FROM journal_actions WHERE action = 'photo_supprimee' AND objet_id = $1", [s.id]);
+    expect(j.rowCount).toBe(1);
+    // une seconde confirmation est refusée
+    expect((await b.http().post(`/correspondances/${id}/valider`).set(auth(p))).status).toBe(400);
   });
 });
 

@@ -108,6 +108,8 @@ export class CorrespondancesController {
       distance_km: apresAgent ? this.distance(c) : null,
       messagerie_ouverte: ['payee', 'remise'].includes(c.etat),
       peut_valider: c.etat === 'validee_agent',
+      // la photo n'est montrée au propriétaire qu'entre la validation de l'agent et sa propre confirmation
+      photo_disponible: c.etat === 'validee_agent' && !!c.sig_photo,
       peut_payer: c.etat === 'validee_citoyen',
       paiement_disponible: this.paydunya.actif(),
       paiement_statut: c.paiement_statut ?? 'aucun',
@@ -134,13 +136,34 @@ export class CorrespondancesController {
     return { c, cote: reel as 'perte' | 'trouvaille' };
   }
 
+  /**
+   * Le propriétaire voit la photo du document trouvé pour le reconnaître, une fois que l'agent a validé
+   * la correspondance et tant qu'il n'a pas confirmé. Chaque ouverture est journalisée.
+   */
+  @Get('correspondances/:id/photo') @Roles('citoyen')
+  async photoCitoyen(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
+    const { c } = await this.cote(u, id, 'perte');
+    if (c.etat !== 'validee_agent') throw new BadRequestException("La photo n'est visible qu'après la validation de l'agent et avant votre confirmation");
+    const p = await this.db.one('SELECT type_mime, donnees FROM signalement_photos WHERE signalement_id = $1', [c.sig_id]);
+    if (!p) throw new NotFoundException('Aucune photo pour ce signalement');
+    await this.journal.ajouter(u.id, 'consultation_photo', 'signalement', c.sig_id);
+    envoyerPhoto(res, p);
+  }
+
+  /** La confirmation du propriétaire supprime définitivement la photo : elle n'a plus d'utilité et montre le document en clair. */
   @Post('correspondances/:id/valider') @Roles('citoyen')
   async validerCitoyen(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string) {
     const { c } = await this.cote(u, id, 'perte');
     if (c.etat !== 'validee_agent') throw new BadRequestException("La vérification par l'agent est nécessaire avant votre confirmation");
-    await this.db.query(`UPDATE correspondances SET etat='validee_citoyen', validation_citoyen_le=now() WHERE id=$1`, [id]);
+    const photoSupprimee = await this.db.tx(async (t) => {
+      const r = await t.query(`UPDATE correspondances SET etat='validee_citoyen', validation_citoyen_le=now() WHERE id=$1 AND etat='validee_agent'`, [id]);
+      if (!r.rowCount) throw new BadRequestException('Cette correspondance a déjà été confirmée');
+      const p = await t.query('DELETE FROM signalement_photos WHERE signalement_id = $1', [c.sig_id]);
+      return (p.rowCount ?? 0) > 0;
+    });
     await this.journal.ajouter(u.id, 'correspondance_validee_citoyen', 'correspondance', id);
-    return { ok: true, etat: 'validee_citoyen' };
+    if (photoSupprimee) await this.journal.ajouter(u.id, 'photo_supprimee', 'signalement', c.sig_id);
+    return { ok: true, etat: 'validee_citoyen', photo_supprimee: photoSupprimee };
   }
 
   /**

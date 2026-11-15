@@ -14,7 +14,7 @@ import { configurer } from '../src/main';
 import { GoogleVerifier } from '../src/auth/google';
 import { UnauthorizedException } from '@nestjs/common';
 import { PaydunyaService } from '../src/paiements/paydunya.service';
-import { FauxPaydunya } from './aide';
+import { FauxPaydunya, PHOTO_TEST } from './aide';
 
 const faux = new FauxPaydunya();
 
@@ -37,7 +37,7 @@ async function compteInterne(email: string, role: 'agent' | 'admin') {
 const auth = (t: string) => ({ Authorization: `Bearer ${t}` });
 
 const decl = { typeDocument: 'cni', numero: '1 234 567 890 123', nomProprietaire: 'Awa Diop', dateNaissance: '1999-04-12', lieuPerte: 'Marché Sandaga, Dakar', datePerte: '2026-10-20' };
-const sig = { typeDocument: 'cni', numero: '1234567890123', nomSurDocument: 'DIOP AWA', dateNaissance: '1999-04-12', lieuTrouve: 'Gare routière Pompiers', dateTrouve: '2026-10-22' };
+const sig = { typeDocument: 'cni', numero: '1234567890123', nomSurDocument: 'DIOP AWA', dateNaissance: '1999-04-12', lieuTrouve: 'Gare routière Pompiers', dateTrouve: '2026-10-22', photo: PHOTO_TEST };
 
 beforeAll(async () => {
   pool = new Pool({ connectionString: process.env.DATABASE_URL });

@@ -82,21 +82,24 @@ export class SignalementsController {
 
   @Post() async creer(@CurrentUser() u: Utilisateur, @Body() d: SignalementDto) {
     pasDansLeFutur(d.dateTrouve, 'La date de découverte');
-    const photo = d.photo ? decoderPhoto(d.photo) : null; // refusée avant toute écriture
+    // La photo est obligatoire : elle permet à l'agent puis au propriétaire de reconnaître le document.
+    if (!d.photo) throw new BadRequestException('La photo du document trouvé est obligatoire');
+    const photo = decoderPhoto(d.photo); // refusée avant toute écriture
     const p = pos(d);
     const sig = await this.db.one(
       `INSERT INTO signalements (compte_id, type_document, numero, nom_sur_document, date_naissance, lieu_trouve, date_trouve, description, lat, lng)
        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) RETURNING *`,
       [u.id, d.typeDocument, normaliserNumero(d.numero), d.nomSurDocument.trim(), d.dateNaissance ?? null, d.lieuTrouve.trim(), d.dateTrouve, d.description ?? null, p.lat, p.lng]);
-    if (photo) await this.db.query('INSERT INTO signalement_photos (signalement_id, type_mime, donnees) VALUES ($1,$2,$3)', [sig.id, photo.mime, photo.donnees]);
+    await this.db.query('INSERT INTO signalement_photos (signalement_id, type_mime, donnees) VALUES ($1,$2,$3)', [sig.id, photo.mime, photo.donnees]);
     await this.journal.ajouter(u.id, 'signalement_cree', 'signalement', sig.id);
     await this.match.apresSignalement(sig);
-    return this.db.one('SELECT id, type_document, lieu_trouve, date_trouve, etat, cree_le, $2::boolean AS a_photo FROM signalements WHERE id = $1', [sig.id, !!photo]);
+    return this.db.one('SELECT id, type_document, lieu_trouve, date_trouve, etat, cree_le, true AS a_photo FROM signalements WHERE id = $1', [sig.id]);
   }
 
-  /** Correction d'un signalement, tant qu'aucun rapprochement n'a été proposé. photo absente = conservée, chaîne vide = retirée. */
+  /** Correction d'un signalement, tant qu'aucun rapprochement n'a été proposé. photo absente = conservée, nouvelle photo = remplacée. Elle ne peut pas être retirée. */
   @Patch(':id') async modifier(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Body() d: SignalementDto) {
     pasDansLeFutur(d.dateTrouve, 'La date de découverte');
+    if (d.photo === '') throw new BadRequestException('La photo du document trouvé est obligatoire : elle peut être remplacée, pas retirée');
     const p = pos(d);
     const photo = d.photo ? decoderPhoto(d.photo) : null;
     const cur = await this.db.one('SELECT compte_id, etat FROM signalements WHERE id = $1', [id]);
@@ -111,7 +114,6 @@ export class SignalementsController {
       if (!r.rows[0]) return null;
       if (photo) await t.query(`INSERT INTO signalement_photos (signalement_id, type_mime, donnees) VALUES ($1,$2,$3)
         ON CONFLICT (signalement_id) DO UPDATE SET type_mime = EXCLUDED.type_mime, donnees = EXCLUDED.donnees, cree_le = now()`, [id, photo.mime, photo.donnees]);
-      else if (d.photo === '') await t.query('DELETE FROM signalement_photos WHERE signalement_id = $1', [id]);
       return r.rows[0];
     });
     if (!sig) throw new BadRequestException("Ce signalement vient d'être rapproché, il ne peut plus être modifié");

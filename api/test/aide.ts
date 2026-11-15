@@ -90,5 +90,8 @@ export async function compteInterne(b: Banc, email: string, role: 'agent' | 'adm
   return r.body.jeton as string;
 }
 
+/** Image PNG valide de 1 pixel : la photo est obligatoire pour signaler un document trouvé. */
+export const PHOTO_TEST = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+
 export const decl = { typeDocument: 'cni', numero: '1 234 567 890 123', nomProprietaire: 'Awa Diop', dateNaissance: '1999-04-12', lieuPerte: 'Marché Sandaga, Dakar', datePerte: '2026-10-20' };
-export const sig = { typeDocument: 'cni', numero: '1234567890123', nomSurDocument: 'DIOP AWA', dateNaissance: '1999-04-12', lieuTrouve: 'Gare routière Pompiers', dateTrouve: '2026-10-22' };
+export const sig = { typeDocument: 'cni', numero: '1234567890123', nomSurDocument: 'DIOP AWA', dateNaissance: '1999-04-12', lieuTrouve: 'Gare routière Pompiers', dateTrouve: '2026-10-22', photo: PHOTO_TEST };
