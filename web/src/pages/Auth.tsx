@@ -216,14 +216,14 @@ export function Accueil() {
               <span className="tuile" data-ton="sable"><Icone nom="flag" taille={22} /></span>
               <span className="surtitre">Trouvaille</span>
               <h3>J'ai trouvé un document</h3>
-              <p>Vous le signalez avec une photo facultative. Votre nom et votre téléphone ne sont transmis qu'après vérification.</p>
+              <p>Vous le signalez avec une photo du document. Votre nom et votre téléphone ne sont transmis qu'après vérification.</p>
               <Link className="lien-fleche" to="/inscription">Signaler un document<Icone nom="up" /></Link>
             </article>
             <article className="carte service">
               <span className="tuile" data-ton="ciel"><Icone nom="shield" taille={22} /></span>
               <span className="surtitre">Vérification</span>
               <h3>Un agent contrôle</h3>
-              <p>Il compare les valeurs masquées, la distance entre les deux lieux et, si elle existe, la photo. Il valide ou il écarte.</p>
+              <p>Il compare les valeurs masquées, la distance entre les deux lieux et la photo. Il valide ou il écarte. Le propriétaire voit ensuite la photo pour reconnaître sa pièce.</p>
               <a className="lien-fleche" href="#confidentialite">Nos garanties<Icone nom="up" /></a>
             </article>
           </div>

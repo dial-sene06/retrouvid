@@ -164,13 +164,13 @@ export function Confidentialite() {
 
       <h2>Ce que nous collectons, et pourquoi</h2>
       <p><b>Votre compte.</b> Prénom, nom, adresse e-mail, téléphone et mot de passe, que nous ne conservons que haché. Ces données servent à vous identifier et à vous joindre. Votre téléphone et votre e-mail ne sont transmis à l'autre personne qu'après la vérification d'un agent, votre confirmation et le paiement.</p>
-      <p><b>Vos déclarations et signalements.</b> Type de document, numéro, nom, date de naissance si vous la donnez, lieu et date, description, photo facultative et position GPS facultative. Ces données servent à rapprocher une perte d'un document trouvé. Le numéro et le nom d'un document trouvé ne sont jamais montrés au propriétaire ; l'agent ne les lit que partiellement masqués.</p>
+      <p><b>Vos déclarations et signalements.</b> Type de document, numéro, nom, date de naissance si vous la donnez, lieu et date, description, photo du document trouvé (obligatoire) et position GPS facultative. Ces données servent à rapprocher une perte d'un document trouvé. Le numéro et le nom d'un document trouvé ne sont jamais montrés au propriétaire ; l'agent ne les lit que partiellement masqués.</p>
       <p><b>Votre paiement.</b> Nous gardons le montant, la date, l'état et la référence de la transaction. Le numéro Wave ou Orange Money que vous saisissez reste chez PayDunya et son opérateur : RetrouvID ne le voit pas.</p>
       <p><b>Vos échanges.</b> Les messages de la discussion, ouverte seulement après le paiement, et ceux que vous envoyez par le formulaire de contact.</p>
       <p><b>Le journal des actions.</b> Les actions sensibles (inscription, validation, ouverture d'un dossier par un administrateur, clôture) sont inscrites avec la date et le compte concerné. Le contenu des messages n'y figure jamais.</p>
 
       <h2>Qui voit quoi</h2>
-      <p>L'agent de correspondance voit des valeurs masquées en partie, la distance entre les deux lieux et la photo. L'administrateur peut ouvrir le détail complet d'un dossier ; chaque ouverture est journalisée. L'autre personne ne reçoit vos coordonnées qu'à la fin du parcours de vérification.</p>
+      <p>L'agent de correspondance voit des valeurs masquées en partie, la distance entre les deux lieux et la photo. Après la validation de l'agent, le propriétaire voit aussi la photo pour reconnaître son document ; elle est supprimée dès qu'il confirme. L'administrateur peut ouvrir le détail complet d'un dossier ; chaque ouverture est journalisée. L'autre personne ne reçoit vos coordonnées qu'à la fin du parcours de vérification.</p>
 
       <h2>Combien de temps</h2>
       <p>À la clôture d'un dossier, le numéro, le nom, la date de naissance, la description, la photo et les messages sont effacés, et les positions GPS sont remises à zéro. Le compte et le journal sont conservés. Le prototype n'applique pas encore de durée maximale automatique pour un compte inactif : elle sera fixée avant toute mise en service.</p>

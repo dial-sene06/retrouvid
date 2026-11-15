@@ -31,9 +31,11 @@ export function NouveauSignalement() {
   const [err, setErr] = useState(''); const [occupe, setOccupe] = useState(false);
   const maj = (k: string) => (e: any) => setF({ ...f, [k]: e.target.value });
   async function envoyer(e: FormEvent) {
-    e.preventDefault(); setErr(''); setOccupe(true);
+    e.preventDefault(); setErr('');
+    if (!photo) { setErr('Ajoutez une photo du document : elle est obligatoire.'); return; }
+    setOccupe(true);
     const body: any = { ...f }; if (!body.dateNaissance) delete body.dateNaissance; if (!body.description) delete body.description;
-    if (photo) body.photo = photo;
+    body.photo = photo;
     if (pos) { body.lat = pos.lat; body.lng = pos.lng; }
     try { await api('/signalements', { body }); nav('/'); } catch (x: any) { setErr(x.message); } finally { setOccupe(false); }
   }

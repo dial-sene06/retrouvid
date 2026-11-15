@@ -1,7 +1,7 @@
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { api, Compte, DOCS, ETATS_CORR, ETATS_DOSSIER, fdate, OPTIONS_DOCS } from '../api';
-import { Action, Alerte, Champ, Doc, Icone, Liste, Puce, Stat, Titre, Vide } from '../ui';
+import { Action, Alerte, Champ, Doc, Icone, Liste, PhotoVue, Puce, Stat, Titre, Vide } from '../ui';
 import { Discussion } from '../discussion';
 import { Rubans } from '../rubans';
 import { CarteOsm, ChampLieu, distanceTexte, Pt } from '../geo';
@@ -32,7 +32,9 @@ function Suivi({ c, recharger }: { c: any; recharger: () => void }) {
       )}
       {c.signalement?.lat != null && <CarteOsm pos={{ lat: c.signalement.lat, lng: c.signalement.lng }} titre="Lieu où le document a été trouvé" />}
       {c.peut_valider && <>
-        <p>Un agent a vérifié cette correspondance. Si ce document est bien le vôtre, confirmez.</p>
+        <p>Un agent a vérifié cette correspondance. Regardez la photo du document trouvé : si c'est bien le vôtre, confirmez.</p>
+        {c.photo_disponible && <div style={{ marginBottom: 12 }}><PhotoVue chemin={`/correspondances/${c.id}/photo`} /></div>}
+        <p className="muted petit">Votre confirmation supprime définitivement la photo.</p>
         <Action onClick={async () => { await api(`/correspondances/${c.id}/valider`, { method: 'POST' }); recharger(); }}>Oui, c'est mon document</Action>
       </>}
       {c.peut_payer && (c.paiement_disponible ? <>

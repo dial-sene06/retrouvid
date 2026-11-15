@@ -131,17 +131,17 @@ export function Photo({ valeur, onChange }: { valeur: string; onChange: (v: stri
   }
   return (
     <div className="champ photo">
-      <label>Photo du document (facultatif)</label>
+      <label>Photo du document <span aria-hidden="true">*</span></label>
       {valeur ? (
         <div className="photo-apercu"><img src={valeur} alt="Aperçu de la photo du document" />
-          <button type="button" className="btn s" onClick={() => onChange('')}>Retirer la photo</button></div>
+          <button type="button" className="btn s" onClick={() => onChange('')}>Changer de photo</button></div>
       ) : (
         <div className="ligne">
           <label className="btn s photo-btn"><Icone nom="camera" />Prendre une photo<input type="file" accept="image/*" capture="environment" onChange={choisir} hidden /></label>
           <label className="btn s photo-btn"><Icone nom="image" />Choisir un fichier<input type="file" accept="image/*" onChange={choisir} hidden /></label>
         </div>
       )}
-      <small>Cadrez le document bien à plat, texte lisible. Seuls les agents et l'administration peuvent la voir, et elle est effacée à la clôture du dossier.</small>
+      <small>Obligatoire. Cadrez le document bien à plat, texte lisible. Elle est montrée à l'agent qui vérifie, puis au propriétaire pour qu'il reconnaisse sa pièce, et elle est supprimée dès qu'il confirme.</small>
       {err && <Alerte>{err}</Alerte>}
     </div>
   );
