@@ -3,6 +3,7 @@ process.env.AUTH_LIMIT = '1000';
 
 import { hash } from 'bcryptjs';
 import { auth, Banc, demarrer } from './aide';
+import { EmailService } from '../src/auth/email.service';
 
 /** Vérification du téléphone par un code à 6 chiffres (SMS simulé) : avant l'inscription et à chaque connexion d'un citoyen. */
 let b: Banc;
@@ -138,5 +139,78 @@ describe('connexion', () => {
     const r = await entrer();
     expect(r.body.verificationRequise).toBe(true);
     expect(r.body.codeSimule).toBeUndefined();
+  });
+});
+
+describe('code par e-mail (Brevo)', () => {
+  /** Faux Brevo : garde les e-mails envoyés, peut simuler une panne. */
+  const envoyes: any[] = [];
+  let panne = false;
+  const fauxBrevo = async (url: any, init: any): Promise<Response> => {
+    if (panne) throw new Error('réseau coupé');
+    envoyes.push({ url: String(url), entetes: init.headers, corps: JSON.parse(init.body) });
+    return new Response(JSON.stringify({ messageId: 'test' }), { status: 201, headers: { 'Content-Type': 'application/json' } });
+  };
+  const codeDe = (e: any) => /code RetrouvID : ([0-9]{6})/.exec(e.corps.subject)![1];
+  beforeAll(() => { b.app.get(EmailService).fetchImpl = fauxBrevo as typeof fetch; });
+  beforeEach(() => { envoyes.length = 0; panne = false; process.env.BREVO_API_KEY = 'cle-brevo-test'; process.env.EMAIL_EXPEDITEUR = 'no-reply@retrouvid.sn'; });
+  afterAll(() => { delete process.env.BREVO_API_KEY; delete process.env.EMAIL_EXPEDITEUR; });
+
+  it("envoie un vrai e-mail, sans jamais renvoyer le code à l'écran, puis crée le compte", async () => {
+    const r = await b.http().post('/auth/inscription').send(fiche('mail.awa@test.sn'));
+    expect(r.body.emailDisponible).toBe(true);
+    const m = await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'email' });
+    expect(m.status).toBe(201);
+    expect(m.body).toMatchObject({ canal: 'email', email: 'm•••@test.sn' });
+    expect(m.body.codeSimule).toBeUndefined();
+    expect(envoyes).toHaveLength(1);
+    expect(envoyes[0].url).toBe('https://api.brevo.com/v3/smtp/email');
+    expect(envoyes[0].entetes['api-key']).toBe('cle-brevo-test');
+    expect(envoyes[0].corps.to).toEqual([{ email: 'mail.awa@test.sn' }]);
+    expect(envoyes[0].corps.sender.email).toBe('no-reply@retrouvid.sn');
+    // l'ancien code (SMS) ne vaut plus rien, celui de l'e-mail crée le compte
+    expect((await saisir(r.body.verificationId, r.body.codeSimule === codeDe(envoyes[0]) ? autreCode(codeDe(envoyes[0])) : r.body.codeSimule)).status).toBe(401);
+    const ok = await saisir(r.body.verificationId, codeDe(envoyes[0]));
+    expect(ok.status).toBe(201);
+    expect(await nbComptes('mail.awa@test.sn')).toBe(1);
+  });
+
+  it("à la connexion, le code part à l'adresse du compte", async () => {
+    const r = await b.http().post('/auth/inscription').send(fiche('mail.co@test.sn'));
+    await saisir(r.body.verificationId, r.body.codeSimule);
+    const c = await b.http().post('/auth/connexion').send({ email: 'mail.co@test.sn', motDePasse: 'MotDePasse1' });
+    const m = await b.http().post('/auth/verification/renvoyer').send({ verificationId: c.body.verificationId, canal: 'email' });
+    expect(m.status).toBe(201);
+    expect(envoyes[0].corps.to).toEqual([{ email: 'mail.co@test.sn' }]);
+    const ok = await saisir(c.body.verificationId, codeDe(envoyes[0]));
+    expect(ok.status).toBe(201);
+    expect(ok.body.jeton).toBeDefined();
+  });
+
+  it("sans configuration Brevo, l'e-mail n'est pas proposé ni simulé", async () => {
+    delete process.env.BREVO_API_KEY;
+    const r = await b.http().post('/auth/inscription').send(fiche('mail.sans@test.sn'));
+    expect(r.body.emailDisponible).toBe(false);
+    const m = await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'email' });
+    expect(m.status).toBe(400);
+    expect(envoyes).toHaveLength(0);
+  });
+
+  it("si Brevo est injoignable, l'utilisateur est prévenu et peut repasser au SMS", async () => {
+    const r = await b.http().post('/auth/inscription').send(fiche('mail.panne@test.sn'));
+    panne = true;
+    const m = await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'email' });
+    expect(m.status).toBe(503);
+    expect(m.body.message).toMatch(/SMS/);
+    expect(JSON.stringify(m.body)).not.toMatch(/[0-9]{6}/);
+    panne = false;
+    const s = await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'sms' });
+    expect(s.body.canal).toBe('sms');
+    expect((await saisir(r.body.verificationId, s.body.codeSimule)).status).toBe(201);
+  });
+
+  it('refuse un canal inconnu', async () => {
+    const r = await b.http().post('/auth/inscription').send(fiche('mail.canal@test.sn'));
+    expect((await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'pigeon' })).status).toBe(400);
   });
 });

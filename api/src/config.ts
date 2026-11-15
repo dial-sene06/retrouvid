@@ -24,6 +24,14 @@ export const config = {
     tentativesMax: 5,
     envoisMax: 3,
   },
+  /** Code de vérification par e-mail, envoyé par Brevo. Sans clé ni expéditeur, l'option e-mail n'est pas proposée. */
+  email: {
+    cleBrevo: () => process.env.BREVO_API_KEY ?? '',
+    /** Adresse validée comme expéditeur dans Brevo (Senders & IP). */
+    expediteur: () => process.env.EMAIL_EXPEDITEUR ?? '',
+    nomExpediteur: () => process.env.EMAIL_NOM_EXPEDITEUR ?? 'RetrouvID',
+    configure: () => !!(process.env.BREVO_API_KEY && process.env.EMAIL_EXPEDITEUR),
+  },
   /** Adresse publique de la PWA : c'est là que PayDunya renvoie l'utilisateur après le paiement. */
   urlApplication: () => (process.env.APP_URL ?? process.env.CORS_ORIGIN?.split(',')[0] ?? 'http://localhost:5173').replace(/\/$/, ''),
   /** Adresse publique de l'API (https) : PayDunya y envoie sa notification de paiement. Vide en local. */

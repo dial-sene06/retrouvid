@@ -303,11 +303,11 @@ function chargerGoogle(): Promise<void> {
  * Google ne fournit pas le téléphone : s'il s'agit d'un nouveau compte, on le demande avant de le créer.
  */
 /** Réponse du serveur quand un code doit être saisi avant d'ouvrir la session ou de créer le compte. */
-interface Verif { verificationId: string; telephone: string; dureeMinutes: number; codeSimule?: string }
+interface Verif { verificationId: string; canal?: 'sms' | 'email'; telephone: string; email?: string; dureeMinutes: number; codeSimule?: string; emailDisponible?: boolean }
 
 /**
- * Saisie du code à 6 chiffres envoyé par SMS. En démonstration, aucun SMS ne part : le serveur renvoie le code
- * et l'encart « SMS simulé » l'affiche à la place du téléphone.
+ * Saisie du code à 6 chiffres envoyé par SMS ou par e-mail. En démonstration, aucun SMS ne part : le serveur renvoie le code
+ * et l'encart « SMS simulé » l'affiche. Le code par e-mail, lui, part vraiment (Brevo) et n'est jamais affiché.
  */
 function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creation: boolean; onOk: (j: string, c: Compte) => void; onAnnuler: () => void }) {
   const [v, setV] = useState(verif);
@@ -317,16 +317,22 @@ function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creatio
     try { const r = await api('/auth/verification', { body: { verificationId: v.verificationId, code } }); onOk(r.jeton, r.compte); }
     catch (x: any) { setErr(x.message); } finally { setOccupe(false); }
   }
-  async function renvoyer() {
+  async function renvoyer(canal?: 'sms' | 'email') {
     setErr(''); setInfo(''); setOccupe(true);
-    try { setV(await api<Verif>('/auth/verification/renvoyer', { body: { verificationId: v.verificationId } })); setCode(''); setInfo('Un nouveau code vient de vous être envoyé.'); }
-    catch (x: any) { setErr(x.message); } finally { setOccupe(false); }
+    try {
+      const r = await api<Verif>('/auth/verification/renvoyer', { body: { verificationId: v.verificationId, ...(canal ? { canal } : {}) } });
+      setV(r); setCode('');
+      setInfo(r.canal === 'email' ? `Code envoyé par e-mail à ${r.email}.` : 'Un nouveau code vient de vous être envoyé.');
+    } catch (x: any) { setErr(x.message); } finally { setOccupe(false); }
   }
+  const parEmail = v.canal === 'email';
   return (
     <form onSubmit={valider}>
-      <h1>Vérifiez votre numéro</h1>
-      <p className="auth-intro">Un code à 6 chiffres a été envoyé par SMS au <b>{v.telephone}</b>. Il reste valable {v.dureeMinutes} minutes.</p>
-      {v.codeSimule && (
+      <h1>{parEmail ? 'Vérifiez votre e-mail' : 'Vérifiez votre numéro'}</h1>
+      <p className="auth-intro">{parEmail
+        ? <>Un code à 6 chiffres a été envoyé à <b>{v.email}</b>. Il reste valable {v.dureeMinutes} minutes. Pensez à regarder dans les spams.</>
+        : <>Un code à 6 chiffres a été envoyé par SMS au <b>{v.telephone}</b>. Il reste valable {v.dureeMinutes} minutes.</>}</p>
+      {!parEmail && v.codeSimule && (
         <div className="sms-simule" role="status">
           <span className="puce warn">SMS simulé</span>
           <p>RetrouvID : votre code de vérification est <b>{v.codeSimule}</b>.</p>
@@ -338,7 +344,9 @@ function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creatio
       {info && <Alerte type="ok">{info}</Alerte>}
       {err && <Alerte>{err}</Alerte>}
       <button className="btn p" disabled={occupe || code.length !== 6} style={{ width: '100%' }}>{occupe ? 'Vérification…' : creation ? 'Vérifier et créer mon compte' : 'Vérifier et me connecter'}</button>
-      <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={renvoyer}>Renvoyer un code</button>
+      <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer()}>Renvoyer un code</button>
+      {!parEmail && v.emailDisponible && <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer('email')}>Recevoir le code par e-mail</button>}
+      {parEmail && <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer('sms')}>Recevoir le code par SMS</button>}
       <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={onAnnuler}>Annuler</button>
     </form>
   );

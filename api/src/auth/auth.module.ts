@@ -1,15 +1,16 @@
 import {
-  BadRequestException, Body, ConflictException, Controller, Get, Global, Injectable, Logger, Module, Patch, Post, UnauthorizedException,
+  BadRequestException, Body, ConflictException, Controller, Get, Global, Injectable, Logger, Module, Patch, Post, ServiceUnavailableException, UnauthorizedException,
 } from '@nestjs/common';
 import { JwtModule, JwtService } from '@nestjs/jwt';
 import { Throttle } from '@nestjs/throttler';
 import { createHash, randomBytes, randomInt, randomUUID, timingSafeEqual } from 'crypto';
 import { compare, hash } from 'bcryptjs';
-import { IsBoolean, IsEmail, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsBoolean, IsEmail, IsIn, IsOptional, IsString, IsUUID, Length, Matches, MaxLength, MinLength } from 'class-validator';
 import { config } from '../config';
 import { Public, CurrentUser, Utilisateur } from '../common/auth';
 import { DbService } from '../db/db.service';
 import { JournalService } from '../journal/journal.service';
+import { EmailService } from './email.service';
 import { GoogleVerifier } from './google';
 
 export class InscriptionDto {
@@ -48,8 +49,11 @@ export class VerificationDto {
   @IsUUID() verificationId: string;
   @Matches(/^[0-9]{6}$/, { message: 'le code comporte 6 chiffres' }) code: string;
 }
+export type Canal = 'sms' | 'email';
 export class RenvoiDto {
   @IsUUID() verificationId: string;
+  /** Changer de canal : « email » pour recevoir le code par e-mail plutôt que par SMS, et inversement. */
+  @IsOptional() @IsIn(['sms', 'email']) canal?: Canal;
 }
 
 /** Informations d'un compte en attente de création, gardées avec le code tant que le numéro n'est pas vérifié. */
@@ -60,6 +64,10 @@ const doitVerifier = (c: { role: string }) => config.verifTelephone.active() && 
 
 /** Seuls les deux derniers chiffres sont montrés : l'écran ne révèle pas le numéro d'un compte. */
 const masquerTelephone = (t: string) => { const c = t.replace(/\D/g, ''); return `•• ••• •• ${c.slice(-2)}`; };
+/** Même principe pour l'e-mail : première lettre et domaine seulement (a•••@gmail.com). */
+const masquerEmail = (e: string) => { const [n, d] = e.split('@'); return `${n.slice(0, 1)}•••@${d}`; };
+
+const echapper = (s: string) => s.replace(/[&<>"']/g, (c) => `&#${c.charCodeAt(0)};`);
 
 // Faux hachage comparé quand l'e-mail n'existe pas : le temps de réponse ne révèle pas si le compte existe.
 const HACHAGE_LEURRE = '$2a$12$C6UzMDM.H6dfI/f/IKcEeO5Ys1zQYm1b7oXk3n8y0tq8pQp9y1b2e';
@@ -67,7 +75,7 @@ const HACHAGE_LEURRE = '$2a$12$C6UzMDM.H6dfI/f/IKcEeO5Ys1zQYm1b7oXk3n8y0tq8pQp9y
 @Injectable()
 export class AuthService {
   private log = new Logger('SMS');
-  constructor(private db: DbService, private jwt: JwtService, private journal: JournalService, private google: GoogleVerifier) {}
+  constructor(private db: DbService, private jwt: JwtService, private journal: JournalService, private google: GoogleVerifier, private mail: EmailService) {}
 
   private jeton(c: { id: string; role: string }) { return this.jwt.signAsync({ sub: c.id, role: c.role }); }
 
@@ -101,29 +109,52 @@ export class AuthService {
     const simulation = config.verifTelephone.simulation();
     this.log.log(simulation ? `SMS simulé vers ${masque} : votre code RetrouvID est ${code}` : `Code demandé pour ${masque} (aucun fournisseur SMS branché)`);
     return {
-      verificationRequise: true, verificationId: id, telephone: masque, dureeMinutes: config.verifTelephone.dureeMinutes,
+      verificationRequise: true, verificationId: id, canal: 'sms' as Canal, telephone: masque, dureeMinutes: config.verifTelephone.dureeMinutes,
+      emailDisponible: this.mail.configure(),
       ...(simulation ? { codeSimule: code } : {}),
     };
   }
 
-  private async demanderCode(objet: 'inscription' | 'connexion', telephone: string, compteId: string | null, charge: object | null) {
+  /** Le code part pour de vrai par Brevo, il n'est jamais renvoyé à l'écran. */
+  private async envoyerEmail(id: string, email: string, telephone: string, code: string) {
+    const d = config.verifTelephone.dureeMinutes;
+    const ok = await this.mail.envoyer(email, `Votre code RetrouvID : ${code}`,
+      `Votre code de vérification RetrouvID est ${code}. Il est valable ${d} minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.`,
+      `<p>Votre code de vérification RetrouvID est :</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${echapper(code)}</p>`
+      + `<p>Il est valable ${d} minutes.</p><p style="color:#666">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>`);
+    if (!ok) throw new ServiceUnavailableException("L'e-mail n'a pas pu être envoyé. Réessayez ou recevez le code par SMS.");
+    this.log.log(`Code envoyé par e-mail à ${masquerEmail(email)}`);
+    return {
+      verificationRequise: true, verificationId: id, canal: 'email' as Canal, email: masquerEmail(email), telephone: masquerTelephone(telephone),
+      dureeMinutes: d, emailDisponible: true,
+    };
+  }
+
+  private envoyerCode(v: { id: string; canal: Canal; email: string | null; telephone: string }, code: string) {
+    return v.canal === 'email' && v.email ? this.envoyerEmail(v.id, v.email, v.telephone, code) : this.envoyerSms(v.id, v.telephone, code);
+  }
+
+  private async demanderCode(objet: 'inscription' | 'connexion', telephone: string, email: string, compteId: string | null, charge: object | null) {
     const id = randomUUID(), code = this.nouveauCode();
     await this.db.query(`DELETE FROM verifications_telephone WHERE expire_le < now() - interval '1 day'`);
     await this.db.query(
-      `INSERT INTO verifications_telephone (id, objet, compte_id, telephone, code_hache, charge, expire_le)
-       VALUES ($1,$2,$3,$4,$5,$6::jsonb, now() + make_interval(mins => $7))`,
-      [id, objet, compteId, telephone, this.hacheCode(id, code), charge ? JSON.stringify(charge) : null, config.verifTelephone.dureeMinutes]);
+      `INSERT INTO verifications_telephone (id, objet, compte_id, telephone, email, code_hache, charge, expire_le)
+       VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb, now() + make_interval(mins => $8))`,
+      [id, objet, compteId, telephone, email, this.hacheCode(id, code), charge ? JSON.stringify(charge) : null, config.verifTelephone.dureeMinutes]);
     return this.envoyerSms(id, telephone, code);
   }
 
+  /** Nouveau code, éventuellement sur l'autre canal. L'ancien code ne vaut plus rien. */
   async renvoyerCode(d: RenvoiDto) {
+    if (d.canal === 'email' && !this.mail.configure()) throw new BadRequestException("L'envoi du code par e-mail n'est pas disponible pour le moment.");
     const code = this.nouveauCode();
     const v = await this.db.one(
-      `UPDATE verifications_telephone SET code_hache = $2, tentatives = 0, envois = envois + 1, expire_le = now() + make_interval(mins => $3)
-       WHERE id = $1 AND utilisee_le IS NULL AND envois < $4 AND cree_le > now() - interval '30 minutes' RETURNING id, telephone`,
-      [d.verificationId, this.hacheCode(d.verificationId, code), config.verifTelephone.dureeMinutes, config.verifTelephone.envoisMax]);
+      `UPDATE verifications_telephone SET code_hache = $2, tentatives = 0, envois = envois + 1, expire_le = now() + make_interval(mins => $3),
+         canal = COALESCE($5, canal)
+       WHERE id = $1 AND utilisee_le IS NULL AND envois < $4 AND cree_le > now() - interval '30 minutes' RETURNING id, telephone, email, canal`,
+      [d.verificationId, this.hacheCode(d.verificationId, code), config.verifTelephone.dureeMinutes, config.verifTelephone.envoisMax, d.canal ?? null]);
     if (!v) throw new BadRequestException("Impossible d'envoyer un nouveau code. Recommencez depuis le début.");
-    return this.envoyerSms(v.id, v.telephone, code);
+    return this.envoyerCode(v, code);
   }
 
   /** Le code ouvre la session (connexion) ou crée le compte (inscription). Il ne sert qu'une fois. */
@@ -153,7 +184,7 @@ export class AuthService {
     if (!config.verifTelephone.active()) return this.creerCompte(f);
     // le compte n'existe pas tant que le numéro n'est pas vérifié : ses informations attendent avec le code
     if (await this.db.one('SELECT id FROM comptes WHERE email = $1', [f.email])) throw new ConflictException('Un compte existe déjà avec cet e-mail');
-    return this.demanderCode('inscription', f.telephone, null, f);
+    return this.demanderCode('inscription', f.telephone, f.email, null, f);
   }
 
   async connecter(d: ConnexionDto) {
@@ -162,7 +193,7 @@ export class AuthService {
     const ok = await compare(d.motDePasse, c?.mot_de_passe_hache ?? HACHAGE_LEURRE);
     if (!c || !c.actif || !ok) throw new UnauthorizedException('E-mail ou mot de passe incorrect');
     // le code n'est demandé qu'aux citoyens : les agents et l'administrateur sont des comptes internes, créés par l'administration
-    if (doitVerifier(c)) return this.demanderCode('connexion', c.telephone, c.id, null);
+    if (doitVerifier(c)) return this.demanderCode('connexion', c.telephone, c.email, c.id, null);
     return this.ouvrirSession(c);
   }
 
@@ -185,10 +216,10 @@ export class AuthService {
         nom: (g.nom || 'Utilisateur').slice(0, 60), prenom: (g.prenom || 'Google').slice(0, 60), email, telephone: d.telephone.trim(),
         hache: await hash(randomBytes(32).toString('hex'), 12), cgu: false, googleSub: g.sub,
       };
-      return config.verifTelephone.active() ? this.demanderCode('inscription', f.telephone, null, f) : this.creerCompte(f);
+      return config.verifTelephone.active() ? this.demanderCode('inscription', f.telephone, f.email, null, f) : this.creerCompte(f);
     }
     if (!c.actif) throw new UnauthorizedException('Compte désactivé');
-    if (doitVerifier(c)) return this.demanderCode('connexion', c.telephone, c.id, { fournisseur: 'google' });
+    if (doitVerifier(c)) return this.demanderCode('connexion', c.telephone, c.email, c.id, { fournisseur: 'google' });
     return this.ouvrirSession(c, 'google');
   }
 }
@@ -234,7 +265,7 @@ export class AuthController {
 @Module({
   imports: [JwtModule.registerAsync({ useFactory: () => ({ secret: config.jwtSecret(), signOptions: { expiresIn: '8h', algorithm: 'HS256' }, verifyOptions: { algorithms: ['HS256'] } }) })],
   controllers: [AuthController],
-  providers: [AuthService, GoogleVerifier],
-  exports: [JwtModule],
+  providers: [AuthService, GoogleVerifier, EmailService],
+  exports: [JwtModule, EmailService],
 })
 export class AuthModule {}

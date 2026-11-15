@@ -50,6 +50,14 @@ Un code à 6 chiffres est demandé avant la création d'un compte et à chaque c
 - `VERIF_TELEPHONE=non` dans `api/.env` coupe la vérification. Les tests existants l'utilisent ; `verification.spec.ts` (11 tests) couvre la vérification.
 - Pour de vrais SMS, il reste à brancher un fournisseur dans `AuthService.envoyerSms` et à passer `SMS_MODE` à une autre valeur, ce qui retire le code de la réponse.
 
+### Code par e-mail (Brevo)
+
+Sur l'écran du code, le bouton « Recevoir le code par e-mail » envoie un nouveau code à l'adresse du compte (ou de l'inscription). Cet e-mail part vraiment, par l'API de Brevo, et le code n'est jamais renvoyé à l'écran. L'ancien code ne vaut plus rien, et « Recevoir le code par SMS » permet de revenir au SMS.
+
+1. Créer un compte sur brevo.com, puis dans **Expéditeurs** ajouter et valider l'adresse qui enverra les codes.
+2. Dans **SMTP & API → Clés API**, créer une clé.
+3. Renseigner `BREVO_API_KEY` et `EMAIL_EXPEDITEUR` (et si besoin `EMAIL_NOM_EXPEDITEUR`, `RetrouvID` par défaut). Sans ces deux valeurs, le bouton n'apparaît pas.
+
 ## Géolocalisation
 
 Position GPS facultative sur les déclarations et les signalements. Le navigateur fournit les coordonnées (`navigator.geolocation`, avec l'accord de l'utilisateur), le serveur les convertit en adresse par le service Nominatim d'OpenStreetMap. Le navigateur n'appelle jamais Nominatim lui-même : le serveur espace ses appels d'une seconde (la politique d'usage du service public tolère une requête par seconde pour toute l'application), garde les résultats 24 heures en mémoire, envoie un `User-Agent` identifiable et répond « pas d'adresse » si le service est injoignable, ce qui laisse le formulaire utilisable. Le navigateur ne donne la position que sur une page en HTTPS (ou sur `localhost`), après accord de l'utilisateur.
@@ -119,7 +127,7 @@ Un seul projet Vercel sert la PWA et l'API. La racine du projet Vercel est `web/
 Mise en place (une fois) :
 1. Sur vercel.com : **Add New → Project**, importer le dépôt GitHub, **Root Directory = `web`**.
 2. Onglet **Storage** du projet : créer une base **Neon** (Postgres) et la relier au projet ; Vercel ajoute `DATABASE_URL`.
-3. **Settings → Environment Variables** : `JWT_SECRET` (longue valeur aléatoire), `PG_POOL_MAX=3`, `CORS_ORIGIN`, `APP_URL`, `VITE_SITE_URL` (l'adresse https du site), `API_PUBLIC_URL` (la même suivie de `/api`), et si besoin `SMS_MODE`, `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`, les clés `PAYDUNYA_*`.
+3. **Settings → Environment Variables** : `JWT_SECRET` (longue valeur aléatoire), `PG_POOL_MAX=3`, `CORS_ORIGIN`, `APP_URL`, `VITE_SITE_URL` (l'adresse https du site), `API_PUBLIC_URL` (la même suivie de `/api`), et si besoin `SMS_MODE`, `BREVO_API_KEY` et `EMAIL_EXPEDITEUR` (code par e-mail), `GOOGLE_CLIENT_ID`, `VITE_GOOGLE_CLIENT_ID`, les clés `PAYDUNYA_*`.
 4. Redéployer. Chaque push sur `main` redéploie ensuite le site.
 5. Créer le premier administrateur (les comptes de démonstration, au mot de passe public, ne doivent pas être créés en production) : ajouter aux variables du projet `ADMIN_EMAIL` (Config) et `ADMIN_MOT_DE_PASSE` (Secret, 12 caractères minimum), redéployer (le build lance `creer-admin --si-configure`), puis **supprimer `ADMIN_MOT_DE_PASSE`** des variables. Depuis un poste, `npm run creer-admin` fait la même chose avec `DATABASE_URL` pointant vers Neon.
 
