@@ -126,7 +126,9 @@ export class SignalementsController {
     if (!sig) throw new BadRequestException('Ce signalement ne peut plus être modifié');
     await this.journal.ajouter(u.id, 'signalement_modifie', 'signalement', id);
     await this.match.apresSignalement(sig);
-    return { id, etat: sig.etat };
+    // l'état est relu : le rapprochement qui vient de tourner peut l'avoir fait passer « en vérification »
+    const apres = await this.db.one('SELECT etat FROM signalements WHERE id = $1', [id]);
+    return { id, etat: apres.etat };
   }
 
   @Delete(':id') async supprimer(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string) {

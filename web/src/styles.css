@@ -1089,3 +1089,9 @@ h1.titre-fort .mot>span{animation-name:mot-masque-court}
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
   .app main .carte:not(.kpi-carte),.auth-cadre .auth-carte,.auth-legal .legal{background:color-mix(in srgb,var(--surface) 92%,transparent)}
 }
+
+/* fiche d'un dossier dans « Toutes les déclarations » (agent) : libellé à gauche, valeur à droite, alignés */
+.fiche-dossier{margin:10px 0 6px;display:grid;gap:6px}
+.fiche-dossier>div{display:grid;grid-template-columns:minmax(84px,max-content) 1fr;gap:12px;align-items:baseline}
+.fiche-dossier dt{font-family:var(--f-mono);font-size:11px;font-weight:500;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+.fiche-dossier dd{margin:0;font-weight:700;overflow-wrap:anywhere}

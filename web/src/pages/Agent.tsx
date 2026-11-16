@@ -12,7 +12,7 @@ function ListeDossiers({ titre, l, lieu }: { titre: string; l: any[]; lieu: stri
       {l.length === 0 ? <Vide>Aucun dossier ouvert.</Vide> : l.map((d) => (
         <div className="carte" key={d.id}>
           <div className="ligne espace"><Doc type={d.type_document} /><Puce ton={d.etat === 'en_attente' ? 'warn' : 'ok'}>{ETATS[d.etat] ?? d.etat}</Puce></div>
-          <dl style={{ margin: '10px 0 0' }}>
+          <dl className="fiche-dossier">
             <div><dt>Numéro</dt><dd>{d.numero}</dd></div>
             <div><dt>Nom</dt><dd>{d.nom}</dd></div>
             <div><dt>{lieu}</dt><dd>{d.lieu}, le {fdate(d.date)}</dd></div>

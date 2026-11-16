@@ -8,6 +8,7 @@ const ACTIONS: Record<string, string> = {
   connexion: 'Connexion', inscription: 'Inscription', recherche: 'Recherche', agent_cree: 'Agent créé', compte_desactive: 'Compte désactivé',
   declaration_creee: 'Déclaration enregistrée', declaration_modifiee: 'Déclaration corrigée', profil_modifie: 'Profil modifié', contenu_retire: 'Contenu retiré', signalement_cree: 'Document signalé', paiement_simule: 'Paiement simulé', paiement_initie: 'Paiement ouvert', paiement_reussi: 'Paiement reçu', paiement_incoherent: 'Paiement incohérent',
   consultation_donnees_masquees: 'Consultation de données masquées', consultation_coordonnees: 'Consultation de coordonnées', consultation_photo: 'Consultation d\'une photo',
+  consultation_donnees_agent: 'Consultation par un agent', photo_supprimee: 'Photo supprimée', signalement_ouvert_correction: 'Signalement ouvert pour correction',
   correspondance_validee_agent: 'Validation par un agent', correspondance_validee_citoyen: 'Validation par le citoyen',
   signalement_modifie: 'Signalement corrigé', signalement_supprime: 'Signalement supprimé', declaration_supprimee: 'Déclaration supprimée', message_envoye: 'Message envoyé', mot_de_passe_modifie: 'Mot de passe modifié', contact_traite: 'Message de contact traité',
   correspondance_ecartee: 'Correspondance écartée', remise_confirmee: 'Remise confirmée', cloture_anonymisation: 'Clôture et anonymisation',
@@ -206,6 +207,7 @@ export function AdminJournal() {
         <select id="fa" value={a} onChange={(e) => setA(e.target.value)}>
           <option value="">Toutes les actions</option>
           <option value="consultation_donnees_masquees">Consultations de données masquées</option>
+          <option value="consultation_donnees_agent">Consultations par les agents</option>
           <option value="consultation_coordonnees">Consultations de coordonnées</option>
           <option value="paiement_reussi">Paiements reçus</option>
           <option value="paiement_incoherent">Paiements incohérents</option>

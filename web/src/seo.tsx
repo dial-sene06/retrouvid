@@ -34,16 +34,17 @@ function meta(nom: string, contenu: string, attribut: 'name' | 'property' = 'nam
 }
 
 /** Met à jour <title>, la description et la consigne d'indexation à chaque changement d'écran. */
-export function Seo({ introuvable = false }: { introuvable?: boolean }) {
+export function Seo({ introuvable = false, accueil }: { introuvable?: boolean; accueil?: string }) {
   const { pathname } = useLocation();
   useEffect(() => {
-    const p = introuvable ? undefined : PAGES[pathname] ?? (pathname.startsWith('/declarations/') ? { t: `Corriger une déclaration · ${NOM}` } : pathname.startsWith('/signalements/') ? { t: `Corriger un signalement · ${NOM}` } : pathname.startsWith('/paiement/') ? { t: `Paiement · ${NOM}` } : undefined);
+    // une fois connecté, « / » est l'écran d'accueil de l'espace (mes dossiers, la file de l'agent, le tableau de bord)
+    const p = introuvable ? undefined : (accueil && pathname === '/' ? { t: `${accueil} · ${NOM}` } : PAGES[pathname]) ??(pathname.startsWith('/declarations/') ? { t: `Corriger une déclaration · ${NOM}` } : pathname.startsWith('/signalements/') ? { t: `Corriger un signalement · ${NOM}` } : pathname.startsWith('/paiement/') ? { t: `Paiement · ${NOM}` } : undefined);
     const titre = introuvable ? `Page introuvable · ${NOM}` : p?.t ?? NOM;
     const desc = p?.d ?? ACCUEIL[1];
     document.title = titre;
     meta('description', desc); meta('og:title', titre, 'property'); meta('og:description', desc, 'property'); meta('twitter:title', titre); meta('twitter:description', desc);
     meta('robots', p?.indexer ? 'index,follow' : 'noindex,nofollow');
-  }, [pathname, introuvable]);
+  }, [pathname, introuvable, accueil]);
   // le routeur ne fait pas défiler vers une ancre (#contact) : on le fait ici
   const { hash } = useLocation();
   useEffect(() => { if (hash) setTimeout(() => document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50); }, [hash, pathname]);

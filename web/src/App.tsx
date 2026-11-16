@@ -88,7 +88,7 @@ export default function App() {
   const ROLES = { citoyen: 'Citoyen', agent: 'Agent vérificateur', admin: 'Administrateur' } as const;
   return (
     <div className={`app ${mode}`}>
-      <Seo />
+      <Seo accueil={compte.role === 'admin' ? 'Tableau de bord' : compte.role === 'agent' ? 'Correspondances à vérifier' : 'Mes dossiers'} />
       <a className="skip" href="#contenu">Aller au contenu</a>
       <aside className="lateral">
         <Link to="/" className="logo">Retrouv<span>ID</span></Link>
