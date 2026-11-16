@@ -769,7 +769,7 @@ h1.titre-fort .etiquette{animation-name:etiquette-glisse}
 .app .lateral,.bandeau,.cadre-scene,.app.sombre .carte.kpi-carte{--grille-c:rgba(234,246,238,.06)}
 
 /* ---------- connexion, inscription, code SMS : écran partagé ---------- */
-.auth.auth-cadre{background:#eef4ef}
+.auth.auth-cadre{background:#f8fbf9 url(/fond-auth.webp) no-repeat right center/cover}
 .auth-cadre .auth-in{align-items:stretch}
 .cadre-grille{flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);gap:clamp(16px,3vw,40px);align-items:stretch;padding:18px 0 22px}
 .cadre-scene{position:relative;isolation:isolate;overflow:hidden;border-radius:var(--r-4);color:#eaf6ee;padding:clamp(28px,4vw,56px);display:flex;flex-direction:column;justify-content:center;min-height:540px;
@@ -812,10 +812,9 @@ h1.titre-fort .etiquette{animation-name:etiquette-glisse}
 }
 
 /* ---------- coque de l'application ---------- */
-/* fond : plus de photo, un aplat avec un quadrillage très discret */
-.app::before{background:linear-gradient(color-mix(in srgb,var(--fg) 4%,transparent) 1px,transparent 1px) 0 0/56px 56px,linear-gradient(90deg,color-mix(in srgb,var(--fg) 4%,transparent) 1px,transparent 1px) 0 0/56px 56px,var(--page);
-  -webkit-mask:none;mask:none}
-@media (max-width:899px){.app::before{background:var(--page)}}
+/* fond : la photo des pièces (passeport et carte), sous un voile léger qui garde le texte lisible */
+.app::before{background:linear-gradient(var(--voile),var(--voile)),url(/fond-auth.webp) right center/cover no-repeat,var(--page);-webkit-mask:none;mask:none}
+@media (max-width:899px){.app::before{background:linear-gradient(var(--voile),var(--voile)),url(/fond-auth-mobile.webp) right top/cover no-repeat,var(--page)}}
 .app .lateral{background:radial-gradient(90% 40% at 100% 0%,rgba(143,191,165,.3),transparent 70%),linear-gradient(170deg,#0f6a41 0%,#0b4d2f 45%,#05261a 100%)}
 .app .lateral::before{left:0;bottom:0;top:0;width:auto;right:0;height:auto;opacity:1;animation:none;-webkit-mask:linear-gradient(180deg,#000,transparent 70%);mask:linear-gradient(180deg,#000,transparent 70%);
   background:linear-gradient(var(--grille-c) 1px,transparent 1px) 0 0/40px 40px,linear-gradient(90deg,var(--grille-c) 1px,transparent 1px) 0 0/40px 40px}
@@ -1066,3 +1065,27 @@ h1.titre-fort .mot>span{animation-name:mot-masque-court}
 .auth-accueil .immersif{contain-intrinsic-size:auto 300vh}
 .auth-accueil .dialogue{contain-intrinsic-size:auto 760px}
 .pied-zone{contain-intrinsic-size:auto 900px}
+
+/* =====================================================================================================================
+   Formulaires en verre : partout sauf sur la page d'accueil, les cartes et les champs laissent voir la photo de fond,
+   floutée derrière eux
+   ===================================================================================================================== */
+.app{--verre-fond:color-mix(in srgb,var(--surface) 58%,transparent);--verre-champ:color-mix(in srgb,var(--surface) 48%,transparent);--verre-bord:rgba(255,255,255,.6)}
+.app.sombre{--verre-bord:rgba(255,255,255,.12)}
+@media (prefers-color-scheme:dark){.app:not(.clair){--verre-bord:rgba(255,255,255,.12)}}
+.auth-cadre,.auth-legal{--verre-fond:rgba(251,252,248,.5);--verre-champ:rgba(255,255,255,.42);--verre-bord:rgba(255,255,255,.75)}
+.app main .carte:not(.kpi-carte),.app main .vide,.auth-cadre .auth-carte,.auth-legal .legal{
+  background:var(--verre-fond);border-color:var(--verre-bord);
+  -webkit-backdrop-filter:blur(22px) saturate(1.5);backdrop-filter:blur(22px) saturate(1.5)}
+.auth-cadre .auth-carte,.auth-legal .legal{box-shadow:0 10px 0 rgba(8,40,24,.1),0 40px 70px -40px rgba(8,40,24,.45)}
+.app main .champ :is(input,select,textarea),.auth-cadre .auth-carte .champ input,.auth-legal .champ :is(input,select,textarea){background:var(--verre-champ);border-color:color-mix(in srgb,var(--fg) 16%,transparent)}
+.app main .champ :is(input,select,textarea):focus,.auth-cadre .auth-carte .champ input:focus,.auth-legal .champ :is(input,select,textarea):focus{background:color-mix(in srgb,var(--surface) 82%,transparent)}
+.auth-cadre .auth-carte .btn.s{background:rgba(255,255,255,.4)}
+/* page légale ouverte une fois connecté : elle s'affiche dans l'application (sans cela, elle était fixée dans un conteneur
+   animé de hauteur nulle et restait invisible) */
+.app .vue>.auth-legal{position:relative;inset:auto;z-index:auto;overflow:visible;background:none}
+.app .vue>.auth-legal .en-tete,.app .vue>.auth-legal .pied-zone{display:none}
+/* sans flou disponible, le verre redevient presque opaque pour rester lisible */
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){
+  .app main .carte:not(.kpi-carte),.auth-cadre .auth-carte,.auth-legal .legal{background:color-mix(in srgb,var(--surface) 92%,transparent)}
+}

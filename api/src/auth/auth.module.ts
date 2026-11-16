@@ -25,9 +25,23 @@ export class InscriptionDto {
   @IsOptional() @IsString() @MaxLength(200) siteWeb?: string;
 }
 export class ConnexionDto {
-  @IsEmail() email: string;
+  /** Adresse e-mail ou numéro de téléphone. */
+  @IsOptional() @IsString() @MaxLength(254) identifiant?: string;
+  /** Ancien nom du champ, toujours accepté. */
+  @IsOptional() @IsString() @MaxLength(254) email?: string;
   @IsString() @MaxLength(72) motDePasse: string;
 }
+
+/**
+ * Numéro réduit à ses chiffres, sans indicatif du Sénégal : « +221 77 123 45 67 », « 00221771234567 » et « 77 123 45 67 »
+ * donnent tous « 771234567 ».
+ */
+export const normaliserTelephone = (t: string) => {
+  let c = t.replace(/\D/g, '');
+  if (c.startsWith('00')) c = c.slice(2);
+  if (c.startsWith('221') && c.length === 12) c = c.slice(3);
+  return c;
+};
 
 export class MotDePasseDto {
   @IsString() ancien: string;
@@ -187,11 +201,35 @@ export class AuthService {
     return this.demanderCode('inscription', f.telephone, f.email, null, f);
   }
 
+  /**
+   * Compte désigné par un numéro. Le numéro n'est pas unique (deux comptes peuvent le partager) : on garde le compte actif
+   * dont le mot de passe correspond. Au plus cinq candidats sont essayés. Si plusieurs comptes ont ce numéro et ce mot de passe,
+   * on ne choisit pas au hasard : l'e-mail est demandé.
+   */
+  private async compteParTelephone(telephone: string, motDePasse: string) {
+    const n = normaliserTelephone(telephone);
+    const candidats = (await this.db.query(
+      `SELECT * FROM comptes WHERE right(regexp_replace(telephone, '\\D', '', 'g'), 9) = right($1, 9) AND actif ORDER BY cree_le LIMIT 20`, [n]))
+      .filter((c: any) => normaliserTelephone(c.telephone) === n).slice(0, 5);
+    if (!candidats.length) { await compare(motDePasse, HACHAGE_LEURRE); return null; }
+    const bons: any[] = [];
+    for (const c of candidats) if (await compare(motDePasse, c.mot_de_passe_hache)) bons.push(c);
+    if (bons.length > 1) throw new ConflictException('Plusieurs comptes utilisent ce numéro. Connectez-vous avec votre adresse e-mail.');
+    return bons[0] ?? null;
+  }
+
   async connecter(d: ConnexionDto) {
-    const c = await this.db.one('SELECT * FROM comptes WHERE email = lower($1)', [d.email]);
-    // même message dans les deux cas : on ne révèle pas si l'e-mail existe
-    const ok = await compare(d.motDePasse, c?.mot_de_passe_hache ?? HACHAGE_LEURRE);
-    if (!c || !c.actif || !ok) throw new UnauthorizedException('E-mail ou mot de passe incorrect');
+    const id = (d.identifiant ?? d.email ?? '').trim();
+    const parTelephone = !id.includes('@');
+    if (parTelephone && !/^\+?[0-9 .-]{8,20}$/.test(id)) throw new BadRequestException('Saisissez une adresse e-mail ou un numéro de téléphone');
+    let c: any, ok: boolean;
+    if (parTelephone) { c = await this.compteParTelephone(id, d.motDePasse); ok = !!c; }
+    else {
+      c = await this.db.one('SELECT * FROM comptes WHERE email = lower($1)', [id]);
+      ok = await compare(d.motDePasse, c?.mot_de_passe_hache ?? HACHAGE_LEURRE);
+    }
+    // même message dans tous les cas : on ne révèle pas si l'e-mail ou le numéro existe
+    if (!c || !c.actif || !ok) throw new UnauthorizedException('Identifiant ou mot de passe incorrect');
     // le code n'est demandé qu'aux citoyens : les agents et l'administrateur sont des comptes internes, créés par l'administration
     if (doitVerifier(c)) return this.demanderCode('connexion', c.telephone, c.email, c.id, null);
     return this.ouvrirSession(c);

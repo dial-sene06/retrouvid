@@ -441,7 +441,7 @@ export function Connexion({ onOk }: { onOk: (j: string, c: Compte) => void }) {
   async function envoyer(e: FormEvent) {
     e.preventDefault(); setErr(''); setOccupe(true);
     try {
-      const r = await api('/auth/connexion', { body: { email, motDePasse: mdp } });
+      const r = await api('/auth/connexion', { body: { identifiant: email.trim(), motDePasse: mdp } });
       if (r.verificationRequise) setVerif(r); else onOk(r.jeton, r.compte);
     } catch (x: any) { setErr(x.message); } finally { setOccupe(false); }
   }
@@ -452,7 +452,8 @@ export function Connexion({ onOk }: { onOk: (j: string, c: Compte) => void }) {
     <Cadre><div className="auth-carte"><form onSubmit={envoyer} hidden={tel}>
       <h1>Bon retour</h1>
       <p className="auth-intro">Connectez-vous pour suivre vos dossiers.</p>
-      <Champ id="email" label="Adresse e-mail" type="email" icone="mail" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} />
+      <Champ id="identifiant" label="E-mail ou numéro de téléphone" type="text" icone="user" autoComplete="username" autoCapitalize="none" spellCheck={false}
+        placeholder="nom@exemple.sn ou 77 123 45 67" required value={email} onChange={(e) => setEmail(e.target.value)} />
       <MotDePasse id="mdp" label="Mot de passe" autoComplete="current-password" required value={mdp} onChange={(e) => setMdp(e.target.value)} />
       {err && <Alerte>{err}</Alerte>}
       <button className="btn p" disabled={occupe} style={{ width: '100%' }}>{occupe ? 'Connexion…' : 'Se connecter'}</button>

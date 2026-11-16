@@ -285,3 +285,32 @@ describe("compte, centre d'aide et accueil", () => {
     expect((await b.http().get('/agent/stats').set(auth(c))).status).toBe(403);
   });
 });
+
+describe('connexion par numéro de téléphone', () => {
+  const creer = (email: string, telephone: string, motDePasse = 'MotDePasse1') =>
+    b.http().post('/auth/inscription').send({ nom: 'Tel', prenom: 'Awa', email, telephone, motDePasse }).expect(201);
+  const entrer = (identifiant: string, motDePasse = 'MotDePasse1') => b.http().post('/auth/connexion').send({ identifiant, motDePasse });
+
+  it('accepte le numéro sous plusieurs écritures, avec le même message d\'échec que l\'e-mail', async () => {
+    await creer('tel.ok@test.sn', '+221 76 555 44 33');
+    for (const n of ['765554433', '76 555 44 33', '+221765554433', '00221 76 555 44 33']) {
+      const r = await entrer(n);
+      expect(r.status).toBe(201);
+      expect(r.body.compte.email).toBe('tel.ok@test.sn');
+    }
+    expect((await entrer('tel.ok@test.sn')).status).toBe(201);
+    const mauvais = await entrer('765554433', 'Mauvais1234'), inconnu = await entrer('761110000');
+    expect(mauvais.status).toBe(401); expect(inconnu.status).toBe(401);
+    expect(mauvais.body.message).toBe(inconnu.body.message);
+    expect((await entrer('pas un numéro')).status).toBe(400);
+  });
+
+  it('demande l\'e-mail quand deux comptes partagent le numéro et le mot de passe', async () => {
+    await creer('tel.a@test.sn', '781112233'); await creer('tel.b@test.sn', '781112233');
+    expect((await entrer('781112233')).status).toBe(409);
+    await creer('tel.c@test.sn', '789998877', 'AutreMdp123'); await creer('tel.d@test.sn', '789998877');
+    const r = await entrer('789998877', 'AutreMdp123');
+    expect(r.status).toBe(201);
+    expect(r.body.compte.email).toBe('tel.c@test.sn');
+  });
+});
