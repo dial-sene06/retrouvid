@@ -27,10 +27,21 @@ export const config = {
   /** Code de vérification par e-mail, envoyé par Brevo. Sans clé ni expéditeur, l'option e-mail n'est pas proposée. */
   email: {
     cleBrevo: () => process.env.BREVO_API_KEY ?? '',
-    /** Adresse validée comme expéditeur dans Brevo (Senders & IP). */
-    expediteur: () => process.env.EMAIL_EXPEDITEUR ?? '',
+    /**
+     * Envoi direct par un serveur SMTP, Gmail par défaut : SMTP_UTILISATEUR est l'adresse Gmail, SMTP_MOT_DE_PASSE un
+     * « mot de passe d'application » Google (16 caractères, jamais le mot de passe du compte).
+     */
+    smtp: {
+      hote: () => process.env.SMTP_HOTE || 'smtp.gmail.com',
+      port: () => Number(process.env.SMTP_PORT || 465),
+      utilisateur: () => process.env.SMTP_UTILISATEUR ?? '',
+      motDePasse: () => (process.env.SMTP_MOT_DE_PASSE ?? '').replace(/\s/g, ''),
+      configure: () => !!(process.env.SMTP_UTILISATEUR && process.env.SMTP_MOT_DE_PASSE),
+    },
+    /** Adresse d'expédition : celle validée dans Brevo, ou par défaut l'adresse Gmail utilisée en SMTP. */
+    expediteur: () => process.env.EMAIL_EXPEDITEUR || process.env.SMTP_UTILISATEUR || '',
     nomExpediteur: () => process.env.EMAIL_NOM_EXPEDITEUR ?? 'RetrouvID',
-    configure: () => !!(process.env.BREVO_API_KEY && process.env.EMAIL_EXPEDITEUR),
+    configure: () => !!(process.env.SMTP_UTILISATEUR && process.env.SMTP_MOT_DE_PASSE) || !!(process.env.BREVO_API_KEY && process.env.EMAIL_EXPEDITEUR),
   },
   /** Adresse publique de la PWA : c'est là que PayDunya renvoie l'utilisateur après le paiement. */
   urlApplication: () => (process.env.APP_URL ?? process.env.CORS_ORIGIN?.split(',')[0] ?? 'http://localhost:5173').replace(/\/$/, ''),

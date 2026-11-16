@@ -229,3 +229,41 @@ describe('code par e-mail (Brevo)', () => {
     expect((await b.http().post('/auth/verification/renvoyer').send({ verificationId: r.body.verificationId, canal: 'pigeon' })).status).toBe(400);
   });
 });
+
+describe('code par e-mail via Gmail (SMTP)', () => {
+  /** Faux transport SMTP : garde les messages, peut simuler un refus de Gmail. */
+  const envoyes: any[] = [];
+  let refus = false;
+  const codeDe = (m: any) => /code RetrouvID : ([0-9]{6})/.exec(m.subject)![1];
+  beforeAll(() => {
+    b.app.get(EmailService).transportImpl = () => ({
+      sendMail: async (m: any) => { if (refus) throw Object.assign(new Error('Invalid login'), { responseCode: 535, code: 'EAUTH' }); envoyes.push(m); return { messageId: 'x' }; },
+    });
+  });
+  beforeEach(() => {
+    envoyes.length = 0; refus = false;
+    delete process.env.BREVO_API_KEY; delete process.env.EMAIL_EXPEDITEUR;
+    process.env.SMTP_UTILISATEUR = 'retrouvid.test@gmail.com'; process.env.SMTP_MOT_DE_PASSE = 'abcd efgh ijkl mnop';
+  });
+  afterAll(() => { delete process.env.SMTP_UTILISATEUR; delete process.env.SMTP_MOT_DE_PASSE; b.app.get(EmailService).transportImpl = null; });
+
+  it("envoie le code depuis l'adresse Gmail, sans l'afficher, puis crée le compte", async () => {
+    const r = await b.http().post('/auth/inscription').send(fiche('smtp.awa@test.sn'));
+    expect(r.status).toBe(201);
+    expect(r.body).toMatchObject({ canal: 'email', emailDisponible: true, smsDisponible: false });
+    expect(r.body.codeSimule).toBeUndefined();
+    expect(envoyes).toHaveLength(1);
+    expect(envoyes[0].to).toBe('smtp.awa@test.sn');
+    expect(envoyes[0].from).toBe('"RetrouvID" <retrouvid.test@gmail.com>');
+    expect(envoyes[0].text).toContain(codeDe(envoyes[0]));
+    expect((await saisir(r.body.verificationId, codeDe(envoyes[0]))).status).toBe(201);
+  });
+
+  it('si Gmail refuse (mauvais mot de passe d\'application), le SMS simulé prend le relais', async () => {
+    refus = true;
+    const r = await b.http().post('/auth/inscription').send(fiche('smtp.refus@test.sn'));
+    expect(r.status).toBe(201);
+    expect(r.body).toMatchObject({ canal: 'sms', emailEchoue: true });
+    expect((await saisir(r.body.verificationId, r.body.codeSimule)).status).toBe(201);
+  });
+});
