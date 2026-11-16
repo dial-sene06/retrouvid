@@ -117,14 +117,21 @@ export class AuthService {
   private hacheCode(id: string, code: string) { return createHash('sha256').update(`${id}:${code}`).digest('hex'); }
   private nouveauCode() { return String(randomInt(0, 1000000)).padStart(6, '0'); }
 
+  /**
+   * Le SMS simulé affiche le code à l'écran : il ne prouve rien. Dès que l'e-mail est configuré, c'est lui qui porte le code,
+   * et le SMS simulé ne sert plus que de secours quand l'e-mail n'a pas pu partir.
+   */
+  private emailParDefaut() { return this.mail.configure() && config.verifTelephone.simulation(); }
+
   /** Aucun SMS ne part : en simulation, le code est écrit dans le journal du serveur et renvoyé à l'écran. */
-  private envoyerSms(id: string, telephone: string, code: string) {
+  private envoyerSms(id: string, telephone: string, code: string, emailEchoue = false) {
     const masque = masquerTelephone(telephone);
     const simulation = config.verifTelephone.simulation();
     this.log.log(simulation ? `SMS simulé vers ${masque} : votre code RetrouvID est ${code}` : `Code demandé pour ${masque} (aucun fournisseur SMS branché)`);
     return {
       verificationRequise: true, verificationId: id, canal: 'sms' as Canal, telephone: masque, dureeMinutes: config.verifTelephone.dureeMinutes,
-      emailDisponible: this.mail.configure(),
+      emailDisponible: this.mail.configure(), smsDisponible: true,
+      ...(emailEchoue ? { emailEchoue: true } : {}),
       ...(simulation ? { codeSimule: code } : {}),
     };
   }
@@ -140,7 +147,7 @@ export class AuthService {
     this.log.log(`Code envoyé par e-mail à ${masquerEmail(email)}`);
     return {
       verificationRequise: true, verificationId: id, canal: 'email' as Canal, email: masquerEmail(email), telephone: masquerTelephone(telephone),
-      dureeMinutes: d, emailDisponible: true,
+      dureeMinutes: d, emailDisponible: true, smsDisponible: !this.emailParDefaut(),
     };
   }
 
@@ -155,12 +162,27 @@ export class AuthService {
       `INSERT INTO verifications_telephone (id, objet, compte_id, telephone, email, code_hache, charge, expire_le)
        VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb, now() + make_interval(mins => $8))`,
       [id, objet, compteId, telephone, email, this.hacheCode(id, code), charge ? JSON.stringify(charge) : null, config.verifTelephone.dureeMinutes]);
-    return this.envoyerSms(id, telephone, code);
+    if (this.emailParDefaut()) {
+      try {
+        const r = await this.envoyerEmail(id, email, telephone, code);
+        await this.db.query(`UPDATE verifications_telephone SET canal = 'email' WHERE id = $1`, [id]);
+        return r;
+      } catch {
+        // l'e-mail n'est pas parti : le SMS simulé prend le relais pour ne pas bloquer la personne
+        this.log.warn(`E-mail indisponible pour ${masquerEmail(email)} : repli sur le SMS simulé`);
+      }
+    }
+    return this.envoyerSms(id, telephone, code, this.emailParDefaut());
   }
 
   /** Nouveau code, éventuellement sur l'autre canal. L'ancien code ne vaut plus rien. */
   async renvoyerCode(d: RenvoiDto) {
     if (d.canal === 'email' && !this.mail.configure()) throw new BadRequestException("L'envoi du code par e-mail n'est pas disponible pour le moment.");
+    if (d.canal === 'sms' && this.emailParDefaut()) {
+      // le SMS simulé n'est rendu qu'en secours, quand le dernier envoi par e-mail a échoué
+      const cur = await this.db.one('SELECT canal FROM verifications_telephone WHERE id = $1', [d.verificationId]);
+      if (cur?.canal === 'email') throw new BadRequestException('Le code est envoyé par e-mail. Pensez à regarder dans les spams.');
+    }
     const code = this.nouveauCode();
     const v = await this.db.one(
       `UPDATE verifications_telephone SET code_hache = $2, tentatives = 0, envois = envois + 1, expire_le = now() + make_interval(mins => $3),
@@ -168,7 +190,13 @@ export class AuthService {
        WHERE id = $1 AND utilisee_le IS NULL AND envois < $4 AND cree_le > now() - interval '30 minutes' RETURNING id, telephone, email, canal`,
       [d.verificationId, this.hacheCode(d.verificationId, code), config.verifTelephone.dureeMinutes, config.verifTelephone.envoisMax, d.canal ?? null]);
     if (!v) throw new BadRequestException("Impossible d'envoyer un nouveau code. Recommencez depuis le début.");
-    return this.envoyerCode(v, code);
+    try {
+      return await this.envoyerCode(v, code);
+    } catch (e) {
+      // e-mail non parti : on revient au SMS pour que le secours reste possible
+      if (v.canal === 'email') await this.db.query(`UPDATE verifications_telephone SET canal = 'sms' WHERE id = $1`, [v.id]);
+      throw e;
+    }
   }
 
   /** Le code ouvre la session (connexion) ou crée le compte (inscription). Il ne sert qu'une fois. */

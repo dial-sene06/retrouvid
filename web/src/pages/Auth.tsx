@@ -303,7 +303,7 @@ function chargerGoogle(): Promise<void> {
  * Google ne fournit pas le téléphone : s'il s'agit d'un nouveau compte, on le demande avant de le créer.
  */
 /** Réponse du serveur quand un code doit être saisi avant d'ouvrir la session ou de créer le compte. */
-interface Verif { verificationId: string; canal?: 'sms' | 'email'; telephone: string; email?: string; dureeMinutes: number; codeSimule?: string; emailDisponible?: boolean }
+interface Verif { verificationId: string; canal?: 'sms' | 'email'; telephone: string; email?: string; dureeMinutes: number; codeSimule?: string; emailDisponible?: boolean; smsDisponible?: boolean; emailEchoue?: boolean }
 
 /**
  * Saisie du code à 6 chiffres envoyé par SMS ou par e-mail. En démonstration, aucun SMS ne part : le serveur renvoie le code
@@ -332,6 +332,7 @@ function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creatio
       <p className="auth-intro">{parEmail
         ? <>Un code à 6 chiffres a été envoyé à <b>{v.email}</b>. Il reste valable {v.dureeMinutes} minutes. Pensez à regarder dans les spams.</>
         : <>Un code à 6 chiffres a été envoyé par SMS au <b>{v.telephone}</b>. Il reste valable {v.dureeMinutes} minutes.</>}</p>
+      {!parEmail && v.emailEchoue && <Alerte type="warn">L'e-mail n'a pas pu partir pour le moment. Le code est affiché ci-dessous à titre de secours.</Alerte>}
       {!parEmail && v.codeSimule && (
         <div className="sms-simule" role="status">
           <span className="puce warn">SMS simulé</span>
@@ -346,7 +347,7 @@ function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creatio
       <button className="btn p" disabled={occupe || code.length !== 6} style={{ width: '100%' }}>{occupe ? 'Vérification…' : creation ? 'Vérifier et créer mon compte' : 'Vérifier et me connecter'}</button>
       <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer()}>Renvoyer un code</button>
       {!parEmail && v.emailDisponible && <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer('email')}>Recevoir le code par e-mail</button>}
-      {parEmail && <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer('sms')}>Recevoir le code par SMS</button>}
+      {parEmail && v.smsDisponible !== false && <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={() => renvoyer('sms')}>Recevoir le code par SMS</button>}
       <button type="button" className="btn s" disabled={occupe} style={{ width: '100%', marginTop: 8 }} onClick={onAnnuler}>Annuler</button>
     </form>
   );
