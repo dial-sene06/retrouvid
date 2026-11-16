@@ -42,25 +42,26 @@ export class CorrespondancesController {
     return c;
   }
 
-  // ---- Agent : il compare des valeurs partiellement masquées et ne fait que valider ou écarter ----
+  // ---- Agent : il voit le numéro et le nom en clair pour comparer, puis valide ou écarte. Chaque consultation est journalisée. ----
   @Get('agent/correspondances') @Roles('agent')
-  async fileAgent() {
+  async fileAgent(@CurrentUser() u: Utilisateur) {
     const l = await this.db.query(`${BASE} WHERE c.etat = 'en_verification' ORDER BY c.score DESC, c.cree_le`);
+    if (l.length) await this.journal.ajouter(u.id, 'consultation_donnees_agent', 'correspondance', undefined, { vue: 'file', nombre: l.length });
     return l.map((c) => ({
       id: c.id, score: c.score, type_document: c.type_document, champs_concordants: c.champs_concordants,
       distance_km: this.distance(c),
-      declaration: { numero: masquerNumero(c.decl_numero), nom: masquerNom(c.nom_proprietaire), date_naissance: c.decl_naissance, lieu: c.lieu_perte, date: c.date_perte, lat: c.decl_lat, lng: c.decl_lng },
-      signalement: { numero: masquerNumero(c.sig_numero), nom: masquerNom(c.nom_sur_document), date_naissance: c.sig_naissance, lieu: c.lieu_trouve, date: c.date_trouve, lat: c.sig_lat, lng: c.sig_lng, a_photo: c.sig_photo },
+      declaration: { numero: c.decl_numero, nom: c.nom_proprietaire, date_naissance: c.decl_naissance, lieu: c.lieu_perte, date: c.date_perte, lat: c.decl_lat, lng: c.decl_lng },
+      signalement: { numero: c.sig_numero, nom: c.nom_sur_document, date_naissance: c.sig_naissance, lieu: c.lieu_trouve, date: c.date_trouve, lat: c.sig_lat, lng: c.sig_lng, a_photo: c.sig_photo },
     }));
   }
 
-  /** La photo montre le document en clair : seul l'agent chargé de la vérification la voit, et chaque ouverture est journalisée. */
   /**
    * Vue d'ensemble pour l'agent : toutes les pertes déclarées et tous les documents trouvés encore ouverts,
-   * y compris ceux qui n'ont aucune correspondance. Numéro et nom restent masqués, aucune coordonnée n'est donnée.
+   * y compris ceux qui n'ont aucune correspondance. Numéro et nom sont en clair (consultation journalisée),
+   * mais aucune coordonnée du citoyen (téléphone, e-mail) n'est donnée.
    */
   @Get('agent/dossiers') @Roles('agent')
-  async dossiersAgent() {
+  async dossiersAgent(@CurrentUser() u: Utilisateur) {
     const [pertes, trouves] = await Promise.all([
       this.db.query(`SELECT d.id, d.type_document, d.numero, d.nom_proprietaire AS nom, d.lieu_perte AS lieu, d.date_perte AS date, d.etat, d.cree_le,
           (SELECT count(*) FROM correspondances c WHERE c.declaration_id = d.id AND c.etat <> 'ecartee')::int AS correspondances
@@ -69,10 +70,11 @@ export class CorrespondancesController {
           (SELECT count(*) FROM correspondances c WHERE c.signalement_id = s.id AND c.etat <> 'ecartee')::int AS correspondances
         FROM signalements s WHERE s.etat <> 'cloture' ORDER BY s.cree_le DESC LIMIT 100`),
     ]);
-    const masquer = (r: any) => ({ ...r, numero: masquerNumero(r.numero), nom: masquerNom(r.nom) });
-    return { pertes: pertes.map(masquer), trouves: trouves.map(masquer) };
+    await this.journal.ajouter(u.id, 'consultation_donnees_agent', 'dossiers', undefined, { vue: 'dossiers', nombre: pertes.length + trouves.length });
+    return { pertes, trouves };
   }
 
+  /** La photo montre le document en clair : seul l'agent chargé de la vérification la voit, et chaque ouverture est journalisée. */
   @Get('agent/correspondances/:id/photo') @Roles('agent')
   async photoAgent(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const c = await this.charger(id);

@@ -127,6 +127,12 @@ describe('corriger et supprimer ses dossiers', () => {
     const p = await inscrire(b, 'max.p@test.sn'), f = await inscrire(b, 'max.f@test.sn');
     const d = (await b.http().post('/declarations').set(auth(p)).send(D('MAX000111', { nomProprietaire: 'Aminata Ba' }))).body;
     const s = (await b.http().post('/signalements').set(auth(f)).send(S('MAX000222', { nomSurDocument: 'Ousmane Fall' }))).body;
+    // l'auteur retrouve sa saisie pour la corriger ; personne d'autre
+    const pour = await b.http().get(`/signalements/${s.id}/correction`).set(auth(f));
+    expect(pour.status).toBe(200);
+    expect(pour.body).toMatchObject({ numero: 'MAX000222', nom_sur_document: 'Ousmane Fall', nb_modifications: 0 });
+    expect(pour.body.compte_id).toBeUndefined();
+    expect((await b.http().get(`/signalements/${s.id}/correction`).set(auth(p))).status).toBe(403);
     for (let i = 1; i <= 2; i++) {
       expect((await b.http().patch(`/declarations/${d.id}`).set(auth(p)).send(D('MAX000111', { nomProprietaire: 'Aminata Ba', lieuPerte: `Lieu ${i}` }))).status).toBe(200);
       expect((await b.http().patch(`/signalements/${s.id}`).set(auth(f)).send(S('MAX000222', { nomSurDocument: 'Ousmane Fall', lieuTrouve: `Lieu ${i}`, photo: undefined }))).status).toBe(200);
@@ -138,9 +144,11 @@ describe('corriger et supprimer ses dossiers', () => {
     const l = (await b.http().get('/declarations').set(auth(p))).body.find((x: any) => x.id === d.id);
     expect(l.nb_modifications).toBe(2);
     expect(l.lieu_perte).toBe('Lieu 2');
+    // corrections épuisées : la saisie n'est plus montrée au découvreur
+    expect((await b.http().get(`/signalements/${s.id}/correction`).set(auth(f))).status).toBe(400);
   });
 
-  it("l'agent voit toutes les déclarations ouvertes, même sans correspondance, avec numéro et nom masqués", async () => {
+  it("l'agent voit toutes les déclarations ouvertes, même sans correspondance, avec numéro et nom en clair, consultation journalisée", async () => {
     const p = await inscrire(b, 'vue.p@test.sn'), f = await inscrire(b, 'vue.f@test.sn');
     const agent = await compteInterne(b, 'vue.agent@test.sn', 'agent');
     await b.http().post('/declarations').set(auth(p)).send(D('VUE000777'));
@@ -151,8 +159,10 @@ describe('corriger et supprimer ses dossiers', () => {
     const trouve = r.body.trouves.find((x: any) => x.numero.endsWith('888'));
     expect(perte).toBeDefined();
     expect(trouve).toBeDefined();
-    expect(perte.numero).not.toContain('VUE');
-    expect(perte.nom).toMatch(/\*/);
+    expect(perte.numero).toBe('VUE000777');
+    expect(perte.nom).toBe('NomVUE000777');
+    expect(trouve.numero).toBe('VUE000888');
+    expect((await b.pool.query("SELECT 1 FROM journal_actions WHERE action = 'consultation_donnees_agent'")).rowCount).toBeGreaterThan(0);
     expect(typeof perte.correspondances).toBe('number');
     expect(JSON.stringify(r.body)).not.toMatch(/telephone|email|compte_id/);
     // réservé aux agents

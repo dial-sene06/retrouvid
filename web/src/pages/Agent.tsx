@@ -4,7 +4,7 @@ import { Action, Alerte, Doc, Icone, PhotoVue, Puce, Stat, Vide } from '../ui';
 
 const ETATS: Record<string, string> = { en_attente: 'Sans correspondance', en_verification: 'Correspondance en cours', remis: 'Remis' };
 
-/** Liste de toutes les pertes ou de tous les documents trouvés, valeurs masquées. */
+/** Liste de toutes les pertes ou de tous les documents trouvés, numéro et nom en clair. */
 function ListeDossiers({ titre, l, lieu }: { titre: string; l: any[]; lieu: string }) {
   return (
     <section style={{ marginBottom: 24 }}>
@@ -64,7 +64,7 @@ export function Agent() {
   if (vue === 'tous') return (
     <>
       <h1 className="titre-page">Toutes les déclarations</h1>
-      <p className="muted">Pertes et documents trouvés encore ouverts, valeurs masquées.</p>
+      <p className="muted">Pertes et documents trouvés encore ouverts. Chaque consultation est enregistrée dans le journal.</p>
       {onglets}
       {err && <Alerte>{err}</Alerte>}
       {dossiers === null ? <p className="muted">Chargement…</p> : <>
@@ -77,7 +77,7 @@ export function Agent() {
   return (
     <>
       <h1 className="titre-page">Correspondances à vérifier</h1>
-      <p className="muted">Les valeurs sont partiellement masquées. Vous comparez, puis vous validez ou vous écartez.</p>
+      <p className="muted">Numéro et nom sont affichés en clair pour comparer. Chaque consultation est enregistrée dans le journal.</p>
       {onglets}
       {stats && (
         <div className="grille-kpi stats-agent">

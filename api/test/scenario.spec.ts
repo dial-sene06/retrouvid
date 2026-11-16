@@ -79,8 +79,9 @@ describe('parcours complet', () => {
     expect(file.body).toHaveLength(1);
     corr = file.body[0].id;
     expect(file.body[0].score).toBe(100);
-    expect(file.body[0].declaration.numero).toBe('**********123');
-    expect(JSON.stringify(file.body)).not.toContain('Awa Diop');
+    expect(file.body[0].declaration.numero).toBe('1234567890123');
+    expect(file.body[0].declaration.nom).toBe('Awa Diop');
+    expect(JSON.stringify(file.body)).not.toMatch(/telephone|email/);
   });
 
   it("l'ordre des étapes est imposé", async () => {

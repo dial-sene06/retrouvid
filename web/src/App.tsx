@@ -126,6 +126,7 @@ export default function App() {
               <Route path="/declarer" element={<NouvelleDeclaration />} />
               <Route path="/signaler" element={<NouveauSignalement />} />
               <Route path="/declarations/:id/modifier" element={<NouvelleDeclaration />} />
+              <Route path="/signalements/:id/modifier" element={<NouveauSignalement />} />
               <Route path="/discussions" element={<Discussions />} />
               <Route path="/paiement/retour/:id" element={<RetourPaiement />} />
             </>}

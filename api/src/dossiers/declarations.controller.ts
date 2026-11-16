@@ -151,6 +151,22 @@ export class SignalementsController {
        FROM signalements WHERE compte_id = $1 ORDER BY cree_le DESC`, [u.id]);
   }
 
+  /**
+   * Pour corriger son signalement, l'auteur retrouve ce qu'il a saisi. Seulement tant que la correction est possible
+   * (en attente, moins de deux corrections) : ensuite, numéro et nom ne lui sont plus jamais montrés. La consultation est journalisée.
+   */
+  @Get(':id/correction') async pourCorrection(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string) {
+    const s = await this.db.one(
+      `SELECT id, compte_id, etat, nb_modifications, type_document, numero, nom_sur_document, date_naissance, lieu_trouve, date_trouve, description, lat, lng
+       FROM signalements WHERE id = $1`, [id]);
+    if (!s) throw new NotFoundException('Signalement introuvable');
+    if (s.compte_id !== u.id) throw new ForbiddenException('Accès refusé');
+    if (s.etat !== 'en_attente' || s.nb_modifications >= MODIFICATIONS_MAX) throw new BadRequestException('Ce signalement ne peut plus être corrigé');
+    await this.journal.ajouter(u.id, 'signalement_ouvert_correction', 'signalement', id);
+    const { compte_id: _proprietaire, ...rest } = s;
+    return rest;
+  }
+
   /** Le découvreur peut revoir sa propre photo, et seulement la sienne. */
   @Get(':id/photo') async photo(@CurrentUser() u: Utilisateur, @Param('id', ParseUUIDPipe) id: string, @Res() res: Response) {
     const p = await this.db.one('SELECT p.type_mime, p.donnees, s.compte_id FROM signalement_photos p JOIN signalements s ON s.id = p.signalement_id WHERE p.signalement_id = $1', [id]);

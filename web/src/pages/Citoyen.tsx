@@ -119,7 +119,7 @@ export function Citoyen({ compte, onChange }: { compte: Compte; onChange: () => 
             {d.etat === 'en_attente' && (
               <div className="ligne" style={{ marginTop: 10 }}>
                 {(d.nb_modifications ?? 0) < 2
-                  ? <Link className="btn s" to={`/declarations/${d.id}/modifier`}><Icone nom="edit" />Corriger ({2 - (d.nb_modifications ?? 0)} restante{2 - (d.nb_modifications ?? 0) > 1 ? 's' : ''})</Link>
+                  ? <Link className="btn s" to={`/declarations/${d.id}/modifier`}><Icone nom="edit" />Corriger</Link>
                   : <small className="muted">Plus de correction possible</small>}
                 <Action ton="s" confirmer="Supprimer cette déclaration ? Cette action est définitive." onClick={async () => { await api(`/declarations/${d.id}`, { method: 'DELETE' }); charger(); }}><Icone nom="trash" />Supprimer</Action>
               </div>
@@ -136,6 +136,9 @@ export function Citoyen({ compte, onChange }: { compte: Compte; onChange: () => 
             <p className="muted" style={{ margin: '6px 0 0' }}>Trouvé à {s.lieu_trouve}, le {fdate(s.date_trouve)}{s.a_photo ? ' · photo jointe' : ''}{s.lat != null ? ' · position enregistrée' : ''}</p>
             {s.etat === 'en_attente' && (
               <div className="ligne" style={{ marginTop: 10 }}>
+                {(s.nb_modifications ?? 0) < 2
+                  ? <Link className="btn s" to={`/signalements/${s.id}/modifier`}><Icone nom="edit" />Corriger</Link>
+                  : <small className="muted">Plus de correction possible</small>}
                 <Action ton="s" confirmer="Supprimer ce signalement ? Cette action est définitive." onClick={async () => { await api(`/signalements/${s.id}`, { method: 'DELETE' }); charger(); }}><Icone nom="trash" />Supprimer</Action>
               </div>
             )}
