@@ -36,7 +36,7 @@ export class GeoService {
     if (connu && connu.jusqua > Date.now()) return connu.valeur;
     return this.espacer(async () => {
       try {
-        const r = await fetch(url, { headers: { 'User-Agent': 'RetrouvID/1.0 (prototype ESTM)' }, signal: AbortSignal.timeout(4000) });
+        const r = await fetch(url, { headers: { 'User-Agent': 'RendID/1.0 (prototype ESTM)' }, signal: AbortSignal.timeout(4000) });
         if (!r.ok) { this.log.warn(`géocodage : HTTP ${r.status}`); return null; }
         const valeur = await r.json();
         if (this.cache.size >= 500) this.cache.delete(this.cache.keys().next().value as string);

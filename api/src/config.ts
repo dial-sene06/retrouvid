@@ -40,7 +40,7 @@ export const config = {
     },
     /** Adresse d'expédition : celle validée dans Brevo, ou par défaut l'adresse Gmail utilisée en SMTP. */
     expediteur: () => process.env.EMAIL_EXPEDITEUR || process.env.SMTP_UTILISATEUR || '',
-    nomExpediteur: () => process.env.EMAIL_NOM_EXPEDITEUR ?? 'RetrouvID',
+    nomExpediteur: () => process.env.EMAIL_NOM_EXPEDITEUR ?? 'Rend\'ID',
     configure: () => !!(process.env.SMTP_UTILISATEUR && process.env.SMTP_MOT_DE_PASSE) || !!(process.env.BREVO_API_KEY && process.env.EMAIL_EXPEDITEUR),
   },
   /** Adresse publique de la PWA : c'est là que PayDunya renvoie l'utilisateur après le paiement. */

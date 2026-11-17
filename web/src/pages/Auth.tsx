@@ -180,7 +180,7 @@ export function Accueil() {
 
         <section className="bloc revele" aria-labelledby="titre-atouts">
           <div className="tete-centre">
-            <Titre id="titre-atouts" texte="Pourquoi" etiquette="RetrouvID" ton="sable" />
+            <Titre id="titre-atouts" texte="Pourquoi" etiquette="Rend'ID" ton="sable" />
             <p>Simple et sûr.</p>
           </div>
           <div className="atouts">
@@ -230,7 +230,7 @@ export function Accueil() {
 
         <section className="dialogue revele" aria-labelledby="titre-dialogue">
           <p className="note note-g"><b>Vous :</b>J'ai perdu ma carte d'identité dans un taxi. Par où commencer ?</p>
-          <p className="note note-d"><b>RetrouvID :</b>Déclarez-la ici. On vous prévient si elle est retrouvée.</p>
+          <p className="note note-d"><b>Rend'ID :</b>Déclarez-la ici. On vous prévient si elle est retrouvée.</p>
           <Titre id="titre-dialogue" texte="Une perte, une alerte," etiquette="une remise." ton="menthe" />
           <p className="dialogue-texte">Plus besoin de surveiller les réseaux sociaux.</p>
           <Link className="btn p" to="/inscription">Déclarer une perte</Link>
@@ -336,7 +336,7 @@ function EtapeCode({ verif, creation, onOk, onAnnuler }: { verif: Verif; creatio
       {!parEmail && v.codeSimule && (
         <div className="sms-simule" role="status">
           <span className="puce warn">SMS simulé</span>
-          <p>RetrouvID : votre code de vérification est <b>{v.codeSimule}</b>.</p>
+          <p>Rend'ID : votre code de vérification est <b>{v.codeSimule}</b>.</p>
           <small>Démonstration : aucun SMS réel n'est envoyé.</small>
         </div>
       )}
@@ -409,7 +409,7 @@ function Cadre({ children, enInscription = false }: { children: ReactNode; enIns
     <div className="auth auth-cadre">
       <div className="auth-in">
         <header className="auth-haut">
-          <Link to="/" className="logo auth-logo">Retrouv<span>ID</span></Link>
+          <Link to="/" className="logo auth-logo">Rend'<span>ID</span></Link>
           <nav className="auth-nav" aria-label="Navigation">
             <Link to="/">Accueil</Link>
             {enInscription ? <Link className="pastille" to="/connexion">Connexion</Link> : <Link className="pastille" to="/inscription">Créer un compte</Link>}

@@ -58,7 +58,7 @@ export class PaydunyaService {
       method: 'POST',
       body: JSON.stringify({
         invoice: { total_amount: p.montant, description: p.description, ...(canaux.length ? { channels: canaux } : {}) },
-        store: { name: 'RetrouvID', tagline: "Retrouver une pièce d'identité perdue" },
+        store: { name: 'Rend\'ID', tagline: "Retrouver une pièce d'identité perdue" },
         actions: { return_url: p.retour, cancel_url: p.annulation, ...(p.rappel ? { callback_url: p.rappel } : {}) },
         custom_data: { correspondance_id: p.correspondanceId },
       }),

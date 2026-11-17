@@ -38,7 +38,7 @@ function Suivi({ c, recharger }: { c: any; recharger: () => void }) {
         <Action onClick={async () => { await api(`/correspondances/${c.id}/valider`, { method: 'POST' }); recharger(); }}>Oui, c'est mon document</Action>
       </>}
       {c.peut_payer && (c.paiement_disponible ? <>
-        <Alerte type="warn">Pour obtenir les coordonnées de la personne qui l'a trouvé, un paiement de {c.montant} FCFA est demandé, par Wave ou Orange Money. Vous passez sur la page sécurisée de PayDunya : RetrouvID ne voit ni votre numéro de paiement ni votre code secret.</Alerte>
+        <Alerte type="warn">Pour obtenir les coordonnées de la personne qui l'a trouvé, un paiement de {c.montant} FCFA est demandé, par Wave ou Orange Money. Vous passez sur la page sécurisée de PayDunya : Rend'ID ne voit ni votre numéro de paiement ni votre code secret.</Alerte>
         {c.paiement_statut === 'en_attente' && <Alerte type="info">Un paiement est déjà ouvert pour ce dossier. S'il est terminé, <Link to={`/paiement/retour/${c.id}`}>vérifiez-le ici</Link>.</Alerte>}
         <Action onClick={async () => {
           const r = await api<{ url: string }>(`/correspondances/${c.id}/payer`, { method: 'POST' });

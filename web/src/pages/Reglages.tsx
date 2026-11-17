@@ -27,15 +27,15 @@ function Application() {
     if (!invite) return;
     await invite.prompt();
     const r = await invite.userChoice;
-    setMsg(r.outcome === 'accepted' ? "Installation lancée. L'icône RetrouvID apparaît sur votre appareil." : "Installation refusée. Vous pourrez la relancer ici.");
+    setMsg(r.outcome === 'accepted' ? "Installation lancée. L'icône Rend'ID apparaît sur votre appareil." : "Installation refusée. Vous pourrez la relancer ici.");
     setInvite(null);
   }
   return (
     <div className="cote carte">
       <h2>Application</h2>
       <p className="ligne"><Icone nom={enLigne ? 'check' : 'out'} />{enLigne ? 'Vous êtes connecté à Internet.' : "Vous êtes hors ligne : les écrans déjà ouverts restent lisibles, mais aucune démarche ne peut être enregistrée."}</p>
-      {installee ? <Alerte type="ok">RetrouvID est installée sur cet appareil.</Alerte> :
-        invite ? <button className="btn p" onClick={installer}><Icone nom="download" />Installer RetrouvID</button> :
+      {installee ? <Alerte type="ok">Rend'ID est installée sur cet appareil.</Alerte> :
+        invite ? <button className="btn p" onClick={installer}><Icone nom="download" />Installer Rend'ID</button> :
         <Alerte type="info">L'installation se propose ici quand le navigateur la permet. Sinon, utilisez son menu : « Ajouter à l'écran d'accueil » sur Safari (iPhone), « Installer l'application » sur Chrome et Edge.</Alerte>}
       {msg && <p className="muted petit" role="status">{msg}</p>}
       <p className="muted petit">La position GPS et les cartes demandent une connexion. La position n'est lue qu'au moment où vous appuyez sur « Utiliser ma position actuelle ».</p>

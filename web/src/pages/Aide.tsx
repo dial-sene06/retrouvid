@@ -66,7 +66,7 @@ export function Aide({ compte }: { compte: Compte }) {
       <div className="carte"><Faq /></div>
       {(inst.peut || inst.installee) && (
         <div className="carte ligne espace">
-          <p style={{ margin: 0 }}>{inst.installee ? "L'application est installée sur cet appareil." : "Installez RetrouvID sur l'écran d'accueil pour l'ouvrir comme une application."}</p>
+          <p style={{ margin: 0 }}>{inst.installee ? "L'application est installée sur cet appareil." : "Installez Rend'ID sur l'écran d'accueil pour l'ouvrir comme une application."}</p>
           {inst.peut && <button className="btn s" onClick={inst.installer}><Icone nom="download" />Installer l'application</button>}
         </div>
       )}

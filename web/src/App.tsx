@@ -55,7 +55,7 @@ export default function App() {
   function majCompte(c: Compte) { setCompte({ ...compte!, ...c }); }
   function quitter() { jeton.effacer(); setCompte(null); setNonLues(0); nav('/'); }
 
-  if (!pret) return <div className="demarrage" role="status" aria-label="Chargement"><span className="logo">Retrouv<span>ID</span></span></div>;
+  if (!pret) return <div className="demarrage" role="status" aria-label="Chargement"><span className="logo">Rend'<span>ID</span></span></div>;
 
   type Lien = [string, string, string, boolean?]; // 4e valeur : absent de la barre du bas (mobile)
   const liens: Lien[] = !compte ? [] :
@@ -91,7 +91,7 @@ export default function App() {
       <Seo accueil={compte.role === 'admin' ? 'Tableau de bord' : compte.role === 'agent' ? 'Correspondances à vérifier' : 'Mes dossiers'} />
       <a className="skip" href="#contenu">Aller au contenu</a>
       <aside className="lateral">
-        <Link to="/" className="logo">Retrouv<span>ID</span></Link>
+        <Link to="/" className="logo">Rend'<span>ID</span></Link>
         <nav className="menu" aria-label="Navigation principale">
           {liens.map(([to, l, ic]) => <NavLink key={to} to={to} end className={({ isActive }) => (isActive ? 'actif' : '')}><Icone nom={ic} taille={20} /><span>{l}</span></NavLink>)}
         </nav>
@@ -103,7 +103,7 @@ export default function App() {
       </aside>
       <div className="corps">
         <header className="haut">
-          <Link to="/" className="logo logo-mobile">Retrouv<span>ID</span></Link>
+          <Link to="/" className="logo logo-mobile">Rend'<span>ID</span></Link>
           <p className="salut">Bonjour, <b>{compte.prenom}</b></p>
           <NavLink to="/aide" className="cloche" aria-label="Aide" title="Aide"><Icone nom="help" taille={20} /></NavLink>
           <NavLink to="/profil" className="cloche" aria-label="Mon profil" title="Mon profil"><Icone nom="user" taille={20} /></NavLink>

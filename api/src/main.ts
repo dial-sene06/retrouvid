@@ -41,6 +41,6 @@ export function configurer(app: INestApplication) {
 async function demarrer() {
   const app = configurer(await NestFactory.create(AppModule));
   await app.listen(config.port());
-  console.log(`API RetrouvID sur http://localhost:${config.port()}`);
+  console.log(`API Rend'ID sur http://localhost:${config.port()}`);
 }
 if (require.main === module) demarrer();

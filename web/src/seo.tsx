@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 
-const NOM = 'RetrouvID';
+const NOM = 'Rend\'ID';
 const ACCUEIL = [`${NOM} : retrouver une pièce d'identité perdue au Sénégal`, "Déclarez la perte d'une carte d'identité, d'un permis ou d'un passeport, ou signalez-en un trouvé. Un agent vérifie avant toute transmission de coordonnées."] as const;
 
 /** Titre, description et indexation de chaque écran. Les écrans de l'espace connecté ne sont pas indexés. */

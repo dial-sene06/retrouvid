@@ -127,7 +127,7 @@ export class AuthService {
   private envoyerSms(id: string, telephone: string, code: string, emailEchoue = false) {
     const masque = masquerTelephone(telephone);
     const simulation = config.verifTelephone.simulation();
-    this.log.log(simulation ? `SMS simulé vers ${masque} : votre code RetrouvID est ${code}` : `Code demandé pour ${masque} (aucun fournisseur SMS branché)`);
+    this.log.log(simulation ? `SMS simulé vers ${masque} : votre code Rend'ID est ${code}` : `Code demandé pour ${masque} (aucun fournisseur SMS branché)`);
     return {
       verificationRequise: true, verificationId: id, canal: 'sms' as Canal, telephone: masque, dureeMinutes: config.verifTelephone.dureeMinutes,
       emailDisponible: this.mail.configure(), smsDisponible: true,
@@ -139,9 +139,9 @@ export class AuthService {
   /** Le code part pour de vrai par Brevo, il n'est jamais renvoyé à l'écran. */
   private async envoyerEmail(id: string, email: string, telephone: string, code: string) {
     const d = config.verifTelephone.dureeMinutes;
-    const ok = await this.mail.envoyer(email, `Votre code RetrouvID : ${code}`,
-      `Votre code de vérification RetrouvID est ${code}. Il est valable ${d} minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.`,
-      `<p>Votre code de vérification RetrouvID est :</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${echapper(code)}</p>`
+    const ok = await this.mail.envoyer(email, `Votre code Rend'ID : ${code}`,
+      `Votre code de vérification Rend'ID est ${code}. Il est valable ${d} minutes. Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.`,
+      `<p>Votre code de vérification Rend'ID est :</p><p style="font-size:28px;font-weight:700;letter-spacing:6px">${echapper(code)}</p>`
       + `<p>Il est valable ${d} minutes.</p><p style="color:#666">Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.</p>`);
     if (!ok) throw new ServiceUnavailableException("L'e-mail n'a pas pu être envoyé. Réessayez ou recevez le code par SMS.");
     this.log.log(`Code envoyé par e-mail à ${masquerEmail(email)}`);

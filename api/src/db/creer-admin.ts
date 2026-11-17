@@ -27,7 +27,7 @@ async function main() {
        VALUES ($1, $2, $3, $4, $5, 'admin')
        ON CONFLICT (email) DO UPDATE SET role = 'admin', actif = true, mot_de_passe_hache = EXCLUDED.mot_de_passe_hache
        RETURNING id`,
-      [process.env.ADMIN_NOM ?? 'Administrateur', process.env.ADMIN_PRENOM ?? 'RetrouvID', email, process.env.ADMIN_TELEPHONE ?? '770000000', await hash(mdp, 12)]);
+      [process.env.ADMIN_NOM ?? 'Administrateur', process.env.ADMIN_PRENOM ?? 'Rend\'ID', email, process.env.ADMIN_TELEPHONE ?? '770000000', await hash(mdp, 12)]);
     console.log(`Administrateur prêt : ${email} (${r.rows[0].id})`);
   } finally {
     await c.end();

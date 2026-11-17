@@ -40,7 +40,7 @@ export default defineConfig(({ mode }) => {
       injectRegister: 'script-defer',
       includeAssets: ['icon-192.png', 'icon-512.png', 'icon-maskable-192.png', 'icon-maskable-512.png', 'favicon.svg', 'favicon-32.png', 'apple-touch-icon.png'],
       manifest: {
-        name: 'RetrouvID', short_name: 'RetrouvID', lang: 'fr',
+        name: 'Rend\'ID', short_name: 'Rend\'ID', lang: 'fr',
         description: "Retrouver une pièce d'identité perdue, sans exposer ses données.",
         theme_color: '#0b3d24', background_color: '#f8fbf9', display: 'standalone', start_url: '/',
         icons: [

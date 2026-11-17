@@ -151,7 +151,7 @@ describe('code par e-mail (Brevo)', () => {
     envoyes.push({ url: String(url), entetes: init.headers, corps: JSON.parse(init.body) });
     return new Response(JSON.stringify({ messageId: 'test' }), { status: 201, headers: { 'Content-Type': 'application/json' } });
   };
-  const codeDe = (e: any) => /code RetrouvID : ([0-9]{6})/.exec(e.corps.subject)![1];
+  const codeDe = (e: any) => /code Rend'ID : ([0-9]{6})/.exec(e.corps.subject)![1];
   beforeAll(() => { b.app.get(EmailService).fetchImpl = fauxBrevo as typeof fetch; });
   beforeEach(() => { envoyes.length = 0; panne = false; process.env.BREVO_API_KEY = 'cle-brevo-test'; process.env.EMAIL_EXPEDITEUR = 'no-reply@retrouvid.sn'; });
   afterAll(() => { delete process.env.BREVO_API_KEY; delete process.env.EMAIL_EXPEDITEUR; });
@@ -234,7 +234,7 @@ describe('code par e-mail via Gmail (SMTP)', () => {
   /** Faux transport SMTP : garde les messages, peut simuler un refus de Gmail. */
   const envoyes: any[] = [];
   let refus = false;
-  const codeDe = (m: any) => /code RetrouvID : ([0-9]{6})/.exec(m.subject)![1];
+  const codeDe = (m: any) => /code Rend'ID : ([0-9]{6})/.exec(m.subject)![1];
   beforeAll(() => {
     b.app.get(EmailService).transportImpl = () => ({
       sendMail: async (m: any) => { if (refus) throw Object.assign(new Error('Invalid login'), { responseCode: 535, code: 'EAUTH' }); envoyes.push(m); return { messageId: 'x' }; },
@@ -254,7 +254,7 @@ describe('code par e-mail via Gmail (SMTP)', () => {
     expect(r.body.codeSimule).toBeUndefined();
     expect(envoyes).toHaveLength(1);
     expect(envoyes[0].to).toBe('smtp.awa@test.sn');
-    expect(envoyes[0].from).toBe('"RetrouvID" <retrouvid.test@gmail.com>');
+    expect(envoyes[0].from).toBe('"Rend\'ID" <retrouvid.test@gmail.com>');
     expect(envoyes[0].text).toContain(codeDe(envoyes[0]));
     expect((await saisir(r.body.verificationId, codeDe(envoyes[0]))).status).toBe(201);
   });

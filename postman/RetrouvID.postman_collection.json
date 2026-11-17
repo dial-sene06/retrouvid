@@ -1,7 +1,7 @@
 {
   "info": {
-    "name": "RetrouvID API",
-    "description": "Tests de l'API RetrouvID : parcours complet d'une pièce perdue puis retrouvée, contrôles d'accès et supervision.\n\nÀ lancer dans l'ordre (Runner de Postman ou Newman). Renseigner dans l'environnement `adminEmail` et `adminMotDePasse` (un compte administrateur existant). Les citoyens et l'agent sont créés à chaque exécution avec des adresses uniques.\n\nLe parcours s'arrête à l'ouverture du paiement : le paiement lui-même se fait sur la page PayDunya, hors de l'API.",
+    "name": "Rend'ID API",
+    "description": "Tests de l'API Rend'ID : parcours complet d'une pièce perdue puis retrouvée, contrôles d'accès et supervision.\n\nÀ lancer dans l'ordre (Runner de Postman ou Newman). Renseigner dans l'environnement `adminEmail` et `adminMotDePasse` (un compte administrateur existant). Les citoyens et l'agent sont créés à chaque exécution avec des adresses uniques.\n\nLe parcours s'arrête à l'ouverture du paiement : le paiement lui-même se fait sur la page PayDunya, hors de l'API.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
