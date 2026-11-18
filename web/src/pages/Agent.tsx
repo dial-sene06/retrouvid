@@ -4,7 +4,7 @@ import { Action, Alerte, Doc, Icone, PhotoVue, Puce, Stat, Vide } from '../ui';
 
 const ETATS: Record<string, string> = { en_attente: 'Sans correspondance', en_verification: 'Correspondance en cours', remis: 'Remis' };
 
-/** Liste de toutes les pertes ou de tous les documents trouvés, numéro et nom en clair. */
+/** Liste de toutes les pertes ou de tous les documents trouvés, numéro masqué et nom. */
 function ListeDossiers({ titre, l, lieu }: { titre: string; l: any[]; lieu: string }) {
   return (
     <section style={{ marginBottom: 24 }}>
@@ -77,7 +77,7 @@ export function Agent() {
   return (
     <>
       <h1 className="titre-page">Correspondances à vérifier</h1>
-      <p className="muted">Numéro et nom sont affichés en clair pour comparer. Chaque consultation est enregistrée dans le journal.</p>
+      <p className="muted">Le numéro est masqué : seuls ses trois derniers caractères sont affichés. Chaque consultation est enregistrée dans le journal.</p>
       {onglets}
       {stats && (
         <div className="grille-kpi stats-agent">

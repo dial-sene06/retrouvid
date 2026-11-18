@@ -159,9 +159,9 @@ describe('corriger et supprimer ses dossiers', () => {
     const trouve = r.body.trouves.find((x: any) => x.numero.endsWith('888'));
     expect(perte).toBeDefined();
     expect(trouve).toBeDefined();
-    expect(perte.numero).toBe('VUE000777');
+    expect(perte.numero).toBe('******777');
     expect(perte.nom).toBe('NomVUE000777');
-    expect(trouve.numero).toBe('VUE000888');
+    expect(trouve.numero).toBe('******888');
     expect((await b.pool.query("SELECT 1 FROM journal_actions WHERE action = 'consultation_donnees_agent'")).rowCount).toBeGreaterThan(0);
     expect(typeof perte.correspondances).toBe('number');
     expect(JSON.stringify(r.body)).not.toMatch(/telephone|email|compte_id/);

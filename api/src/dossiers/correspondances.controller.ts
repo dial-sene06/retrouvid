@@ -42,7 +42,7 @@ export class CorrespondancesController {
     return c;
   }
 
-  // ---- Agent : il voit le numéro et le nom en clair pour comparer, puis valide ou écarte. Chaque consultation est journalisée. ----
+  // ---- Agent : il voit le numéro masqué (3 derniers caractères) et le nom pour comparer, puis valide ou écarte. Chaque consultation est journalisée. ----
   @Get('agent/correspondances') @Roles('agent')
   async fileAgent(@CurrentUser() u: Utilisateur) {
     const l = await this.db.query(`${BASE} WHERE c.etat = 'en_verification' ORDER BY c.score DESC, c.cree_le`);
@@ -50,14 +50,14 @@ export class CorrespondancesController {
     return l.map((c) => ({
       id: c.id, score: c.score, type_document: c.type_document, champs_concordants: c.champs_concordants,
       distance_km: this.distance(c),
-      declaration: { numero: c.decl_numero, nom: c.nom_proprietaire, date_naissance: c.decl_naissance, lieu: c.lieu_perte, date: c.date_perte, lat: c.decl_lat, lng: c.decl_lng },
-      signalement: { numero: c.sig_numero, nom: c.nom_sur_document, date_naissance: c.sig_naissance, lieu: c.lieu_trouve, date: c.date_trouve, lat: c.sig_lat, lng: c.sig_lng, a_photo: c.sig_photo },
+      declaration: { numero: masquerNumero(c.decl_numero), nom: c.nom_proprietaire, date_naissance: c.decl_naissance, lieu: c.lieu_perte, date: c.date_perte, lat: c.decl_lat, lng: c.decl_lng },
+      signalement: { numero: masquerNumero(c.sig_numero), nom: c.nom_sur_document, date_naissance: c.sig_naissance, lieu: c.lieu_trouve, date: c.date_trouve, lat: c.sig_lat, lng: c.sig_lng, a_photo: c.sig_photo },
     }));
   }
 
   /**
    * Vue d'ensemble pour l'agent : toutes les pertes déclarées et tous les documents trouvés encore ouverts,
-   * y compris ceux qui n'ont aucune correspondance. Numéro et nom sont en clair (consultation journalisée),
+   * y compris ceux qui n'ont aucune correspondance. Le numéro est masqué, le nom reste lisible (consultation journalisée),
    * mais aucune coordonnée du citoyen (téléphone, e-mail) n'est donnée.
    */
   @Get('agent/dossiers') @Roles('agent')
@@ -71,7 +71,8 @@ export class CorrespondancesController {
         FROM signalements s WHERE s.etat <> 'cloture' ORDER BY s.cree_le DESC LIMIT 100`),
     ]);
     await this.journal.ajouter(u.id, 'consultation_donnees_agent', 'dossiers', undefined, { vue: 'dossiers', nombre: pertes.length + trouves.length });
-    return { pertes, trouves };
+    const masquer = (l: any[]) => l.map((x) => ({ ...x, numero: masquerNumero(x.numero) }));
+    return { pertes: masquer(pertes), trouves: masquer(trouves) };
   }
 
   /** La photo montre le document en clair : seul l'agent chargé de la vérification la voit, et chaque ouverture est journalisée. */
